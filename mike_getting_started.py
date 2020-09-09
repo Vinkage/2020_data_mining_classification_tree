@@ -64,9 +64,9 @@ def impurity(array) -> None:
     @todo: Docstring for 
     """
     # print(array)
-    rel_freq_1_len = len(test_array[0:])
+    rel_freq_1_len = len(array[0:])
     print('len of the vector:', rel_freq_1_len)
-    rel_freq_1_sum = test_array[0:].sum()
+    rel_freq_1_sum = array[0:].sum()
     print(rel_freq_1_sum)
     rel_freq_1 = rel_freq_1_sum / rel_freq_1_len
     rel_freq_0 = 1 - rel_freq_1
@@ -77,3 +77,10 @@ def impurity(array) -> None:
     # pass
 
 impurity(test_array)    
+
+
+def bestsplit(x,y) -> None:
+    """
+    @todo: Docstring for bestsplit
+    """
+    pass
