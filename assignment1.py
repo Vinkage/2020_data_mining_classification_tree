@@ -43,12 +43,14 @@ class Tree():
         """
         @todo: Docstring for drop_left
         """
+        # Need to change
         self.d_structure = self.d_structure["left"]
 
     def drop_right(self) -> dict:
         """
         @todo: Docstring for drop_right
         """
+        # Need to change
         self.d_structure = self.d_structure["right"]
 
 
