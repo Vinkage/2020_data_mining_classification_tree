@@ -4,8 +4,7 @@ credit_data = np.genfromtxt('./credit_score.txt',
                             delimiter=',',
                             skip_header=True)
 
-# "credit_data" is now a 2d NumPy array. Each rows represent a record and the
-# columns represent the data attributes.
+# age,married,house,income,gender,class
 # [(22, 0, 0, 28, 1, 0)
 #  (46, 0, 1, 32, 0, 0)
 #  (24, 1, 1, 24, 1, 0)
@@ -18,137 +17,57 @@ credit_data = np.genfromtxt('./credit_score.txt',
 #  (50, 1, 1, 28, 0, 1)]
 
 
+class Node():
+    """
+    @todo: docstring for Node
+    """
+    def __init__(self, value=None):
+        """@todo: Docstring for init method.
+
+        /value=None/ @todo
+
+        """
+        self.value = value
+
+    def add_split(self, left, right):
+        """
+        @todo: Docstring for add_split
+        """
+        self.left = left
+        self.right = right
+
+
+class Leaf:
+    def __init__(self, predicted_class: int):
+        self.predicted_class = predicted_class
+
+
 class Tree():
     """
     @todo: docstring for Tree
     """
-    def __init__(self, d_structure):
+    def __init__(self, root_node_obj):
         """@todo: Docstring for init method.
 
-        /d_structure/ @todo
+        /root_node_obj/ @todo
 
         """
-        self.d_structure = d_structure
+        self.tree = root_node_obj
 
     def __repr__(self):
-        return str(self.d_structure)
-
-    def drop_left(self) -> dict:
-        """
-        @todo: Docstring for drop_left
-        """
-        # Need to change
-        print("Dropping left:\n", self.prediction["left"])
-        return self.prediction["left"]
-
-    def drop_right(self) -> dict:
-        """
-        @todo: Docstring for drop_right
-        """
-        # Need to change
-        print("Dropping right:\n", self.prediction["right"])
-        return self.prediction["right"]
-
-
-tree_grow_defaults = {
-    'x': credit_data[:, :5],
-    'y': credit_data[:, 5],
-    'n_min': 0,
-    'min_leaf': 0,
-    'n_feat': 5
-}
-
-
-def tree_grow(x=None,
-              y=None,
-              n_min=None,
-              min_leaf=None,
-              n_feat=None,
-              **defaults) -> Tree:
-    """
-    @todo: Docstring for tree_grow
-    """
-    print(
-        "All attribute columns in credit data (to be exhaustively searched per split):\n",
-        x, "\n")
-    print("Class label column in credit data:\n", y, "\n")
-    print(
-        f'Current node will be leaf node if (( (number of data "tuples" in child node) < {n_min=} )) \n'
-    )
-    print(
-        f'Split will not happen if (( (number of data "tuples" potential split) < {min_leaf=} ))\n'
-    )
-    print(
-        f"Number of features/attributes to be randomly drawn from {x=} to be considered for a split, should only be lower than {len(x[0,:])=} for random forest growing, {n_feat=}"
-    )
-    d_structure = {"root": ((0,30), {"left": (None, 1), "right": (None, 0)})}  # dummy data
-    return Tree(d_structure)
-
-
-# Calling the function, unpacking default as argument
-# print(tree_grow(**tree_grow_defaults))
-
-tree_pred_defaults = {
-    'x': credit_data[:, :5],
-    'tr': tree_grow(**tree_grow_defaults)
-}
-
-
-def tree_pred(x=None, tr=None, **defaults) -> np.array:
-    """
-    @todo: Docstring for tree_pred
-    """
-    print("\n\n#########Tree_pred output start:\n")
-    print(f"Drop a row in {x=} down the tree {tr.__repr__()}")
-    # x should be a set of rows that represent cases to be dropped in the tree,
-    # we iterate over the numpy rows
-    y = np.array([])
-    for case in x:
-        # Assumes that tr is a data structure with the following form
-        #
-        # {"root":(split, {"left":(...), "right":(...)})
-        #
-        # Where the (...) is recursion of the pattern tuple(tuple, dict)
-
-        # Copy the data structure of the tree, not very efficient?
-        tr.prediction = tr.d_structure
-
-        split, tr.prediction = tr.prediction["root"]
-        # Unpack the split info we need to do the first split
-        # c is the split value for the drop, and col is the attribute/feature
-        # we are dropping on
-        col, c = split
-        while isinstance(tr.prediction, dict):
-            # The drop methods return a tuple by giving the current
-            # d_structure a key that is either "left" or right":
-            # def drop_left(self):
-            # ...
-            # return tr.prediction["left"]
-            #
-            # Don't even need to check for leaf node, since the while loop
-            # should do that.
-            col, c = split
-            if case[col] > c:
-                split, tr.prediction = tr.drop_right()
-            elif case[col] <= c:
-                split, tr.prediction = tr.drop_left()
-            # Assumes that the leaf nodes in tr.d_structure is the leaf node
-            # that is just the majority(!) class label, which is just the integer 1 or 0.
-            #
-            # This is also the reason we break out of the while loop, when we
-            # arrive to a leaf node with the drop methods, the tr.d_structure
-            # type is no longer a dict, but an int.
-        # print(tr.prediction)
-        y = np.append(y, tr.prediction)
-    print("Predictions from the tree:\n", y)
-    return y
-
-
-tree_pred(**tree_pred_defaults)
-
-#
-#
-# Put all helper functions below this comment!
+        nodelist = [self.tree]
+        tree_str = ''
+        while nodelist:
+            current_node = nodelist.pop()
+            # print(current_node.value)
+            try:
+                childs = [current_node.right, current_node.left]
+                nodelist += childs
+            except AttributeError:
+                pass
+            col, c = current_node.value
+            tree_str += f"{col=}, {c=}"
+        return tree_str
 
 
 def impurity(array) -> int:
@@ -180,11 +99,6 @@ def impurity(array) -> int:
     return gini_index
 
 
-# array=np.array([1,0,1,1,1,0,0,1,1,0,1])
-# print(impurity(array))
-# Should give 0.23....
-
-
 def bestsplit(x, y) -> int:
     """
     x = vector of num values
@@ -203,43 +117,115 @@ def bestsplit(x, y) -> int:
     >>> bestsplit(credit_data[:,3],credit_data[:,5])
      36
     """
-    # Sort all unique attribute values
-    num_attr_sorted = np.sort(np.unique(x))
+    x_sorted = np.sort(np.unique(x))
+    if len(x_sorted) <= 2:
+        # Turns binary attributes from [0,1] to [0, 0.5], allows us to use
+        # normal slices
+        split_points = x_sorted / 2
+    else:
+        split_points = (x_sorted[:len(x_sorted) - 1] + x_sorted[1:]) / 2
 
-    # Use python vector addition to add all corresponding consecutive column
-    # elements and take their average
-    consec_avg_attr_splitpoints = (num_attr_sorted[0:7] +
-                                   num_attr_sorted[1:8]) / 2
+    best_dict = None
+    for split in split_points:
+        # Returns boolean matrix which can be used for slicing x
+        x_slices = {
+            "left": np.index_exp[x > split],
+            "right": np.index_exp[x <= split]
+        }
 
-    # Convert array to list
-    split_points = list(consec_avg_attr_splitpoints)
+        # delta_i formule
+        delta_i = impurity(y) - (len(y[x_slices["left"]]) * impurity(
+            y[x_slices["left"]]) + len(y[x_slices["right"]]) *
+                                 impurity(y[x_slices["right"]])) / len(y)
 
-    # Prepare the constants for the delta impurity equation
-    impurity_parent_node = impurity(y)
-    n_obs_parent_node = len(y)
+        print(f"{split=}, {delta_i=}")
+        if best_dict is not None:
+            if delta_i > best_dict["delta_i"]:
+                best_dict = {"x_slices": x_slices, "split": split, "delta_i":delta_i}
+        else:
+            best_dict = {"slices": x_slices, "split": split, "delta_i":delta_i}
+    return best_dict
 
-    # Init return list
-    split_points_delta_impurities = []
-    while split_points:
-        # compute child nodes class vectors for the split value
-        split_point = split_points.pop()
-        child_node = {"l": y[x > split_point], "r": y[x <= split_point]}
+#
+#
+# Put all helper functions above this comment!
 
-        # Take the weighted average of child node impurities
-        w_avg_child_impurities = (
-            impurity(child_node["l"]) * len(child_node["l"]) + impurity(
-                child_node["r"]) * len(child_node["r"])) / n_obs_parent_node
+def tree_grow(x=None,
+              y=None,
+              n_min=None,
+              min_leaf=None,
+              n_feat=None,
+              **defaults) -> Tree:
+    """
+    @todo: Docstring for tree_grow
+    """
+    all_rows = np.index_exp[:]
+    # Initiate the nodelist with tuples of slice and class labels
+    nodelist = [Node(value={"slices": all_rows})]
+    tree = Tree(nodelist[0])
+    while nodelist:
+        current_node = nodelist.pop()
+        slices = current_node.value["slices"]
+        print(f"Exhaustive split search says, new node will check these rows for potential spliterinos:\n{x[slices]}")
 
-        # Add the used split point and delta impurity to the return list
-        split_points_delta_impurities += [
-            (split_point, impurity_parent_node - w_avg_child_impurities)
-        ]
+        if impurity(y[slices]) > 0:
 
-    # Take the maximum of the list, and unpack
-    best_split, best_delta_impurity = max(split_points_delta_impurities,
-                                          key=lambda x: x[1])
-    return best_split
+            # bestsplit(col, node_labels) -> 
+            # {"x_slices": (boolean matrix, boolean matrix), "split": numpyfloat, "best_delta_i": numpyfloat}
+
+            # slices used for knowing where to split on the next node.
+            # best_split saved in current_node.value
+            # best_delta_i used to find best split among x_columns
+            best_dict = None
+            for x_col in x[slices].transpose():
+                print("\nExhaustive split search says; \"Entering new column\":")
+                col_split_dict = bestsplit(x_col, y[slices])
+
+                if best_dict is not None:
+                    if col_split_dict["delta_i"] > best_dict["delta_i"]:
+                        best_dict = col_split_dict
+                else:
+                    best_dict = col_split_dict
+            print("\nThe best split for current node:", best_dict)
+
+    return tree
 
 
-# print(bestsplit(credit_data[:,3],credit_data[:,5]))
-# Should give 36
+
+def tree_pred(x=None, tr=None, **defaults) -> np.array:
+    """
+    @todo: Docstring for tree_pred
+    """
+    y = np.array([])
+    return y
+
+
+if __name__ == '__main__':
+    #### IMPURITY TEST
+    # array=np.array([1,0,1,1,1,0,0,1,1,0,1])
+    # print(impurity(array))
+    # Should give 0.23....
+
+    #### BESTSPLIT TEST
+    # print(bestsplit(credit_data[:, 3], credit_data[:, 5]))
+    # Should give 36
+
+    #### TREE_GROW TEST
+    tree_grow_defaults = {
+        'x': credit_data[:, :5],
+        'y': credit_data[:, 5],
+        'n_min': 2,
+        'min_leaf': 1,
+        'n_feat': 5
+    }
+
+    # Calling the tree grow, unpacking default as argument
+    tree_grow(**tree_grow_defaults)
+
+    # tree_pred_defaults = {
+    #     'x': credit_data[:, :5],
+    #     'tr': tree_grow(**tree_grow_defaults)
+    # }
+
+    # tree_pred(**tree_pred_defaults)
+
