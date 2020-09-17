@@ -52,6 +52,14 @@ class Node:
         self.left = left
         self.right = right
 
+    def is_leaf_node(self, node_classes):
+        """
+        @todo: Docstring for is_leaf_node
+        """
+        self.col = None
+        self.split_value_or_rows = np.argmax(
+            np.bincount(node_classes.astype(int)))
+
 
 # class Leaf:
 #     """
@@ -128,7 +136,7 @@ def impurity(array) -> int:
     return gini_index
 
 
-def bestsplit(x, y) -> int:
+def bestsplit(x, y, min_leaf) -> None:
     """
     x = vector of single col
     y = vector of classes (last col in x)
@@ -149,7 +157,7 @@ def bestsplit(x, y) -> int:
     x_sorted = np.sort(np.unique(x))
     if len(x_sorted) <= 2:
         # Allows splitting on categorical (0 or 1) cols
-        split_points = [0.5]
+        split_points = x_sorted / 2
     else:
         # Take average between consecutive numerical rows in the x col
         split_points = (x_sorted[:len(x_sorted) - 1] + x_sorted[1:]) / 2
@@ -161,31 +169,87 @@ def bestsplit(x, y) -> int:
     # Deze lus berekent de best split value, en op basis daarvan weten we welke
     # twee "x rows" arrays we moeten returnen, en welke split value het beste
     # was natuurlijk.
-    best_delta_i = None
-    for split in split_points:
-        # np.index_exp maakt een boolean vector die zegt welke elementen in de
-        # col van x hoger of lager zijn dan split
-        col_slice_boolean_matrices = {
-            "left": np.index_exp[x > split],
-            "right": np.index_exp[x <= split]
-        }
 
-        # delta_i formule met de boolean vector van hierboven
-        delta_i = impurity(
-            y) - (len(y[col_slice_boolean_matrices["left"]]) *
-                  impurity(y[col_slice_boolean_matrices["left"]]) +
-                  len(y[col_slice_boolean_matrices["right"]]) *
-                  impurity(y[col_slice_boolean_matrices["right"]])) / len(y)
+    # Nodig voor de delta i formule
+    impurity_parent, n_rows_parent = impurity(y), len(y)
 
-        print(f"{split=}, {delta_i=}")
-        #
-        if best_delta_i is not None:
-            if delta_i > best_delta_i:
-                best_delta_i, best_split, best_col_slice_boolean_matrices = delta_i, split, col_slice_boolean_matrices
-        else:
-            best_delta_i, best_split, best_col_slice_boolean_matrices = delta_i, split, col_slice_boolean_matrices
-    return best_delta_i, best_split, best_col_slice_boolean_matrices
+    # Hieren stoppen we (delta_i, split_value, rows_left, rows_right)
+    best_list = []
+    # Stop wanneer de array met split points leeg is
+    while split_points.size != 0:
+        # Huidige split value
+        split_value = split_points[-1]
+        # boolean masks om x rows mee te masken/slicen
+        mask_left, mask_right = x > split_value, x <= split_value
 
+        # class voor beide split kanten
+        classes_left, classes_right = y[mask_left], y[mask_right]
+
+        # Kijk of er genoeg rows in de gesplitte nodes terechtkomen, anders
+        # mogen we de split niet toelaten vanwege de min_leaf constraint
+        if len(classes_left) < min_leaf or len(classes_right) < min_leaf:
+            # Haal de huidige split_point uit split_points
+            split_points = split_points[:-1]
+            continue
+
+        # delta_i formule
+        delta_i = impurity_parent - (
+            impurity(classes_left) * len(classes_left) +
+            impurity(classes_right) * len(classes_right)) / n_rows_parent
+        # stop huidige splits in de lijst om best split te berekenen
+        best_list.append((delta_i, mask_left, mask_right, split_value))
+        # Haal de huidige split_point uit split_points
+        split_points = split_points[:-1]
+    # Bereken de best split voor deze x col
+    return max(best_list, key=lambda x: x[0])
+
+
+def exhaustive_split_search(rows, classes, min_leaf):
+    """
+    @todo: Docstring for exhaustive_split_search
+    """
+    # We hebben enumerate nodig, want we willen weten op welke col
+    # (age,married,house,income,gender) we een split doen
+    exhaustive_best_list = []
+    # print(f"{rows=}, {classes=}")
+    for i, col in enumerate(rows.transpose()):
+        # calculate the best split for the col that satisfies the min_leaf
+        # constraint
+        col_best_split = bestsplit(col, classes, min_leaf)
+        # add for which row we calculated the best split
+        col_best_split += (i,)
+        exhaustive_best_list.append(col_best_split)
+    return exhaustive_best_list
+
+def add_children(node, x, best_split):
+    """
+    @todo: Docstring for add_children
+    """
+    # The mask that was used to get the rows for the current node from x, we
+    # need this to update the rows for the children
+    current_mask = node.split_value_or_rows
+
+    # Unpacking the best_split tuple
+    mask_left, mask_right, node_split_value, node_col = best_split[1:] 
+    # print(f"{mask_left=}, {mask_right=}, {node_split_value=}, {node_col=}")
+
+    # Give the current node the split_value and col it needs for predictions
+    node.split_value_or_rows, node.col = node_split_value, node_col
+
+    mask_left, mask_right = update_mask(x, mask_left, mask_right, current_mask)
+    return [Node(split_value_or_rows=mask_left), Node(split_value_or_rows=mask_right)]
+
+def update_mask(x, mask_left, mask_right, current_mask):
+    """
+    @todo: Docstring for update_mask
+    """
+    print(f"{current_mask=}")
+    print(f"{mask_left=}")
+    print(f"{mask_right=}")
+    current_row_no = np.where(current_mask)
+    print(f"{current_rows=}")
+    return mask_left, mask_right
+    
 
 #
 #
@@ -201,17 +265,68 @@ def tree_grow(x=None,
     """
     @todo: Docstring for tree_grow
     """
-    # De nodelist heeft in het begin alleen een lijst met alle rows van x,
+    # De nodelist heeft in het begin alleen een root node met alle rows van x,
     # omdat alle rows in de root in acht worden genomen voor bestsplit berekening.
     #
-    # Dit representeren we met een boolean vector, met lengte het aantal rows
-    # in x en elementen True. Deze boolean vector zullen we repeatedly gebruiken als een
+    # Dit representeren we met een boolean mask over x, met lengte het aantal rows
+    # in x en elementen True. Deze boolean mask zullen we repeatedly gebruiken als een
     # mask over x om de rows voor bestsplit op te halen.
-    rows = np.full((1,len(x)), True)
+    mask = np.full(len(x), True)
 
     # Het eerste node object moet nu geinstantieerd worden
-    root = Node(split_value_or_rows=rows)
-    nodelist = [rows]
+    root = Node(split_value_or_rows=mask)
+
+    # We instantieren ook gelijk het Tree object
+    tr = Tree(root)
+
+    # De eerste nodelist heeft alleen de root node, daarna zijn twee childs,
+    # etc. totdat alle splits gemaakt zijn en de lijst leeg is.
+    nodelist = [root]
+
+    while None not in nodelist:
+        print(nodelist)
+        # Pop de current node uit de nodelist
+        node = nodelist.pop()
+        print(nodelist)
+        # Gebruik de boolean mask van de node om de rows in de node uit x te halen
+        node_rows = x[node.split_value_or_rows]
+        # Gebruik de boolean mask van de node om de classes in de node uit y te halen
+        node_classes = y[node.split_value_or_rows]
+
+        # print(f"{node_classes=}, {node_rows=}")
+
+        # Test of de node een leaf node is met n_min
+        if len(node_rows) < n_min:
+            node.is_leaf_node(node_classes)
+            continue
+
+        # Als de node niet puur is, probeer dan te splitten
+        if impurity(node_classes) > 0:
+            # We gaan exhaustively voor de rows in de node over de cols
+            # (age,married,house,income,gender) om de bestsplit te
+            # bepalen
+            #
+            # We geven min_leaf als argument omdat:
+            # "If the algorithm performs a split, it should be the best split that meets the minleaf constrain"
+            #
+            # We krijgen een exhaustive lijst terug met splits
+            exhaustive_best_list = exhaustive_split_search(node_rows, node_classes, min_leaf)
+            # print(exhaustive_best_list)
+            # Als de lijst leeg is zijn er geen potentieele splits die voldoen
+            # an de min leaf constraint
+            if not exhaustive_best_list:
+                node.is_leaf_node(node_classes)
+                continue
+            # Hier halen we de beste split, en rows voor de child/split nodes
+            # uit de exhaustive best list
+            best_split = max(exhaustive_best_list, key=lambda z: z[0])
+            # Hier voegen we de twee nieuwe nodes toe aan de gesplitte "parent"
+            nodelist += add_children(node, x, best_split)
+            # node.add_split(left_child_node, right_child_node)
+        else:
+            node.is_leaf_node(node_classes)
+            continue
+    return tr
 
     # Initiate the nodelist with tuples of slice and class labels
     # nodelist = [Node(value=slices)]
@@ -278,7 +393,6 @@ def tree_grow(x=None,
     #             f"\n\nLEAF NODE has majority clas:\n{current_node.value.value=}"
     #         )
     #         continue
-    # return tree
 
 
 def predict(x, nodes) -> list:
@@ -341,10 +455,10 @@ if __name__ == '__main__':
     tree_grow(**tree_grow_defaults)
 
     #### TREE_PRED TEST
-    tree_pred_defaults = {
-        'x': credit_data[:, :5],
-        'tr': tree_grow(**tree_grow_defaults)
-    }
+    # tree_pred_defaults = {
+    #     'x': credit_data[:, :5],
+    #     'tr': tree_grow(**tree_grow_defaults)
+    # }
 
     # tree_pred(**tree_pred_defaults)
 
