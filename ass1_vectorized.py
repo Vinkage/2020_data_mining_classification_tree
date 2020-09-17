@@ -24,74 +24,34 @@ credit_data = np.genfromtxt('./credit_score.txt',
 # The last column are the classes and will be called as classes in the program
 
 
-class Node:
+class Tree():
     """
-    The node object points to two other Node objects.
+    @todo: docstring for Tree
     """
-    def __init__(self, split_value_or_rows=None, col=None):
-        """Initialises the column and split value for the node.
+    def __init__(self, tree_vec_of_tuples):
+        """@todo: Docstring for init method.
 
-        /split_value_or_rows=None/ can either be the best split value of
-        a col, or a boolean mask for x that selects the rows to consider for
-        calculating the split_value
-
-        /col=None/ if the node object has a split_value, then it also has a col
-        that belongs to this value
+        /root_node_obj/ @todo
 
         """
-        self.split_value_or_rows = split_value_or_rows
-        self.col = col
+        self.tree_vec_of_tuples = tree_vec_of_tuples
+        self.leaf_nodes = np.where(tree_vec_of_tuples[:,1] == -1)
+        self.classes = [(1, -1), (1, -1)]
 
-    def add_split(self, left, right):
+    def drop(self, y):
         """
-        Method that is called in the main loop of tree_grow.
-
-        Lets the node object point to two other objects that can be either Leaf
-        or Node.
+        @todo: Docstring for drop
         """
-        self.left = left
-        self.right = right
-
-
-# class Leaf:
-#     """
-#     Simple class that contains only the majority class in the leaf node.
-#     """
-#     def __init__(self, maj_class):
-#         """Initialises the majority vote.
-
-#         /maj_class/ @todo
-
-#         """
-
-
-class Tree:
-    """
-    Tree object that points towards the root node.
-    """
-    def __init__(self, root_node_obj):
-        """Initialises only by pointing to a Node object.
-
-        /root_node_obj/ is a node object that is made before entering the main
-        loop of tree grow.
-
+        return y * 100
+        
+    def leaf(self, y):
         """
-        self.tree = root_node_obj
+        @todo: Docstring for drop
+        """
+        return y
+        
 
-    # def __repr__(self):
-    #     nodelist = [self.tree]
-    #     tree_str = ''
-    #     while nodelist:
-    #         current_node = nodelist.pop()
-    #         # print(current_node.value)
-    #         try:
-    #             childs = [current_node.right, current_node.left]
-    #             nodelist += childs
-    #         except AttributeError:
-    #             pass
-    #         col, c = current_node.value
-    #         tree_str += f"{col=}, {c=}"
-    #     return tree_str
+
 
 
 def impurity(array) -> int:
@@ -112,9 +72,7 @@ def impurity(array) -> int:
     # Total labels
     n_labels = len(array)
     if n_labels == 0:
-        print(
-            "division by zero will happen, child node is pure, doesnt contain anything"
-        )
+        # Prevents division by zero, when the potential split does not have any rows
         n_labels = 1
     # Number of tuples labeled 1
     n_labels_1 = array.sum()
@@ -186,6 +144,48 @@ def bestsplit(x, y) -> int:
             best_delta_i, best_split, best_col_slice_boolean_matrices = delta_i, split, col_slice_boolean_matrices
     return best_delta_i, best_split, best_col_slice_boolean_matrices
 
+def tree_example(x=None, tr=None, **defaults) -> None:
+    """
+    @todo: Docstring for tree_example
+    """
+    tree_vec = []
+    print(tree_vec)
+    print(type(tree_vec))
+    tree_vec.append((36,3))
+    print(tree_vec)
+    tree_vec.append((0,3))
+    print(tree_vec)
+    tree_vec.append((1, -1))
+    print(tree_vec)
+    print(tree_vec[0])
+    print(type(tree_vec[0]))
+    tree_vec = np.array(tree_vec) # , dtype=(int, 2))
+    print(tree_vec)
+    print(type(tree_vec[0]))
+
+    tree = Tree(tree_vec)
+    
+    # Let's show how to predict
+    # 1. maak een vector met root node voor elke row in x waarvoor je een class
+    # wil predicten.
+    y = np.ones(len(x), dtype=int)
+    print(y)
+    print(type(y))
+    print(y.shape)
+    # 2. Herinner recurrence relatie van whatsapp, en pas hem toe met
+    # tree.drop(x) op nodes die geen leaf node zijn
+    # 
+    # Returns indices where not leaf node
+    print(tree.leaf_nodes)
+    # print(tree.classes)
+    # leafs = np.searchsorted(
+    # print(leafs)
+    y = np.where(np.searchsorted(tree.leaf_nodes, y))
+
+    # y = y[:,0]
+    # print(y)
+
+
 
 #
 #
@@ -201,21 +201,37 @@ def tree_grow(x=None,
     """
     @todo: Docstring for tree_grow
     """
-    # De nodelist heeft in het begin alleen een lijst met alle rows van x,
-    # omdat alle rows in de root in acht worden genomen voor bestsplit berekening.
+    # Voor de lus die onze tree growt instantieren we een list die tuples als
+    # elementen zal hebben, het grote voordeel is dat we op deze manier vector
+    # operaties meerdere parallele
+    # prediction drops kunnen doen. (Je kan bijvoorbeeld geen object methodes
+    # broadcasten als je een numpy array van node objecten hebt)
     #
-    # Dit representeren we met een boolean vector, met lengte het aantal rows
-    # in x en elementen True. Deze boolean vector zullen we repeatedly gebruiken als een
-    # mask over x om de rows voor bestsplit op te halen.
+    # De tuple moet uiteindelijk de informatie bevatten om voor een row in x
+    # een class te voorspellen. Hier hebben we voor nodig:
+    # 
+    # 1. Het split value, voor lager of hoger test
+    # 2. Het col nummer waar de split bij hoort, anders weten we niet waar we op testen
+    #
+    # (split, col)
+    #
+    # De enige uitzondering hierop zijn leaf nodes. Om de tree data structure
+    # een numpy array te maken moeten dit ook tuples zijn. Dit lossen we op
+    # door een negatieve col aan te duiden. Dit zorgt ervoor dat de prediction
+    # functie hier eindigt.
+    #
+    # (class, negative_int: -1)
+    #
+    # Checkout tree example function for more info
+    tree_vec = []
+    # De nodelist heeft in het begin alleen de alle rows van x, omdat alle rows
+    # altijd in de root in acht worden genomen.
+    #
+    # Dit representeren we met een boolean vector, met lengte het aantal rows in x en elementen True.
     rows = np.full((1,len(x)), True)
-
-    # Het eerste node object moet nu geinstantieerd worden
-    root = Node(split_value_or_rows=rows)
     nodelist = [rows]
 
-    # Initiate the nodelist with tuples of slice and class labels
-    # nodelist = [Node(value=slices)]
-    # tree = Tree(nodelist[0])
+    # tree_array = np.empty 
     # while nodelist:
     #     current_node = nodelist.pop()
     #     slices = current_node.value
@@ -338,14 +354,15 @@ if __name__ == '__main__':
     }
 
     # Calling the tree grow, unpacking default as argument
-    tree_grow(**tree_grow_defaults)
+    # tree_grow(**tree_grow_defaults)
 
     #### TREE_PRED TEST
     tree_pred_defaults = {
         'x': credit_data[:, :5],
-        'tr': tree_grow(**tree_grow_defaults)
+        # 'tr': tree_grow(**tree_grow_defaults)
     }
 
+    tree_example(**tree_pred_defaults)
     # tree_pred(**tree_pred_defaults)
 
 # start_time = time.time()
