@@ -437,7 +437,7 @@ if __name__ == '__main__':
     }
 
     # Calling the tree grow, unpacking default as argument
-    tree_grow(**tree_grow_defaults)
+    # tree_grow(**tree_grow_defaults)
 
     #### TREE_PRED TEST
     tree_pred_defaults = {
