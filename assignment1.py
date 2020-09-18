@@ -51,7 +51,7 @@ class Node:
 
     def is_leaf_node(self, node_classes):
         """
-        is_leaf_node is used to change the col attribute to zero to indicate a
+        is_leaf_node is used to change the col attribute to None to indicate a
         leaf node
         """
         self.col = None
@@ -84,7 +84,7 @@ class Tree:
 
         # De index van de row van x die we in de boom willen droppen
         drop = 0
-        while not set(nodes).issubset({0, 1}):
+        while not all(pred_class in {0,1} for pred_class in nodes):
             # Als de col None is dan is het een leaf node, dus dan is de row
             # van x hier beland
             if nodes[drop].col is None:
