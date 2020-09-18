@@ -1,4 +1,3 @@
-import time
 import numpy as np
 
 credit_data = np.genfromtxt('./credit_score.txt',
@@ -60,23 +59,11 @@ class Node:
             np.bincount(node_classes.astype(int)))
 
 
-# class Leaf:
-#     """
-#     Simple class that contains only the majority class in the leaf node.
-#     """
-#     def __init__(self, maj_class):
-#         """Initialises the majority vote.
-
-#         /maj_class/ @todo
-
-#         """
-
-
 class Tree:
     """
     Tree object that points towards the root node.
     """
-    def __init__(self, root_node_obj):
+    def __init__(self, root_node_obj, hyper_params):
         """Initialises only by pointing to a Node object.
 
         /root_node_obj/ is a node object that is made before entering the main
@@ -84,31 +71,64 @@ class Tree:
 
         """
         self.tree = root_node_obj
-    def __repr__(self):
-        tree_string = ''
-        node = self.tree 
-        depth = 0
-        nodelist = [node]
-        while nodelist:
-            node = nodelist.pop()
-            depth += 1
-            if node.col is not None:
-                left, right = node.left, node.right
-                nodelist += [left, right]
-            else:
-                continue
-            tree_string += '\n' + depth * ' '
-            tree_string += (depth + 4) * ' ' + '/' + ' ' * 2 + '\\' 
-            tree_string += '\n' + ' ' * 2 * depth
-            for direc in left, right:
-                if not direc.split_value_or_rows%10:
-                    tree_string += ' ' * 4
-                else:
-                    tree_string += ' ' * 3
-                tree_string += str(int(direc.split_value_or_rows))
+        self.hyper_params = hyper_params
 
-        tree_string = depth * ' ' + str(int(self.tree.split_value_or_rows)) + tree_string
-        return tree_string
+    def predict(self, x):
+        """
+        Makes a list of root nodes, and drops one row of x through the tree per
+        loop
+        """
+        # Maak een lijst van nodes, wiens indexes overeen komen met de rows in
+        # x die we willen droppen
+        nodes = [self.tree] * len(x)
+
+        # De index van de row van x die we in de boom willen droppen
+        drop = 0
+        while not set(nodes).issubset({0, 1}):
+            # Als de col None is dan is het een leaf node, dus dan is de row
+            # van x hier beland
+            if nodes[drop].col is None:
+                nodes[drop] = nodes[drop].split_value_or_rows
+                drop += 1
+                continue
+
+            # Vergelijk de x col (age,married,house,income,gender,class), in de
+            # gedropte row met het split value van de node. Op basis hiervan
+            # drop naar links of rechts
+            if x[drop, nodes[drop].col] > nodes[drop].split_value_or_rows:
+                nodes[drop] = nodes[drop].left
+            else:
+                nodes[drop] = nodes[drop].right
+        return np.array(nodes)
+
+    # Work in progress tree printer
+    #
+    # def __repr__(self):
+    #     tree_string = ''
+    #     node = self.tree
+    #     depth = 0
+    #     nodelist = [node]
+    #     while nodelist:
+    #         node = nodelist.pop()
+    #         depth += 1
+    #         if node.col is not None:
+    #             left, right = node.left, node.right
+    #             nodelist += [left, right]
+    #         else:
+    #             continue
+    #         tree_string += '\n' + depth * ' '
+    #         tree_string += (depth + 4) * ' ' + '/' + ' ' * 2 + '\\'
+    #         tree_string += '\n' + ' ' * 2 * depth
+    #         for direc in left, right:
+    #             if not direc.split_value_or_rows%10:
+    #                 tree_string += ' ' * 4
+    #             else:
+    #                 tree_string += ' ' * 3
+    #             tree_string += str(int(direc.split_value_or_rows))
+
+    #     tree_string = depth * ' ' + str(int(self.tree.split_value_or_rows)) + tree_string
+    #     return tree_string
+
 
 def impurity(array) -> int:
     """
@@ -208,12 +228,13 @@ def bestsplit(x, y, min_leaf) -> None:
         best_list.append((delta_i, mask_left, mask_right, split_value))
         # Haal de huidige split_point uit split_points
         split_points = split_points[:-1]
-    # Bereken de best split voor deze x col
+
+    # Bereken de best split voor deze x col, als er ten minste 1 bestaat die
+    # voldoet aan min leaf
     if best_list:
         return max(best_list, key=lambda x: x[0])
     else:
         return False
-
 
 
 def exhaustive_split_search(rows, classes, min_leaf):
@@ -224,7 +245,7 @@ def exhaustive_split_search(rows, classes, min_leaf):
     # We hebben enumerate nodig, want we willen weten op welke col
     # (age,married,house,income,gender) we een split doen
     exhaustive_best_list = []
-    # print(f"{rows=}, {classes=}")
+    print(f"Rows:\n{rows},\n Classes:\n{classes}")
     for i, col in enumerate(rows.transpose()):
         # calculate the best split for the col that satisfies the min_leaf
         # constraint
@@ -232,12 +253,13 @@ def exhaustive_split_search(rows, classes, min_leaf):
         # Check if there was a split fullfilling the min leaf rule
         if col_best_split:
             # add for which row we calculated the best split
-            col_best_split += (i,)
+            col_best_split += (i, )
             exhaustive_best_list.append(col_best_split)
     print("\t\t->returning from exhaustive split search")
     return exhaustive_best_list
 
-def add_children(node, x, best_split):
+
+def add_children(node, best_split):
     """
     @todo: Docstring for add_children
     """
@@ -247,54 +269,49 @@ def add_children(node, x, best_split):
     current_mask = node.split_value_or_rows
 
     # Unpacking the best_split tuple
-    mask_left, mask_right, node_split_value, node_col = best_split[1:] 
-    # print(f"{mask_left=}, {mask_right=}, {node_split_value=}, {node_col=}")
+    mask_left, mask_right, node_split_value, node_col = best_split[1:]
+    # print(f"{mask_left}, {mask_right}, {node_split_value}, {node_col}")
 
     # Give the current node the split_value and col it needs for predictions
     node.split_value_or_rows, node.col = node_split_value, node_col
 
     # Updating the row masks to give it to children, keeping numpy dimension consistent
-    mask_left, mask_right = update_mask(mask_left, current_mask), update_mask(mask_right, current_mask)
+    mask_left, mask_right = update_mask(mask_left, current_mask), update_mask(
+        mask_right, current_mask)
 
-    # Adding the link between parent and children
-    node.left, node.right = Node(split_value_or_rows=mask_left), Node(split_value_or_rows=mask_right)
+    # Adding the pointer between parent and children
+    node.add_split(Node(split_value_or_rows=mask_left), Node(split_value_or_rows=mask_right))
     print("\t\t\t->children added to node and node list\n")
     return [node.left, node.right]
 
+
 def update_mask(mask, current_mask):
     """
-    @todo: Docstring for update_mask
+    Updates the spit bool array from any dimension to an array with length
+    equal to the total number of rows in dataset x.
     """
-    print("\t\t\t\t->entering update mask to calculate which rows belong to child")
-    # current_mask = np.array([ True,  True,  True,  True,  True,  True, False, False, False, True])
-    # print(f"Parent mask: {current_mask=}")
-    # print(f"The result of bestsplit: {mask=}")
-    # mask_left=np.array([False,  True, False, False, False,  True,  True])
-    # mask_right=np.array([ True, False,  True,  True,  True, False, False])
+    print(
+        "\t\t\t\t->entering update mask to update mask that calculates which rows belong to child"
+    )
+    # Copy heb ik gedaan omdat we een slice assignment doen.
+    #
+    # Het punt van deze functie is dat tijdens het tree growen het aantal rows
+    # in een node afneemt. Deze functie update de bool array die gebruikt is om
+    # te splitten in bestsplit naar een array met als lengte het totale aantal
+    # rows in de data set x. Op deze manier kunnen we in tree grow de totale x
+    # splitten. 
+    #
+    # Een andere optie zou zijn om de rows letterlijk tijdelijk op te slaan in
+    # nodes... weet niet wat beter is, het kan best veel geheugen in beslag
+    # nemen voor grote dataset neem ik aan... Op de manier hier zijn er altijd
+    # maar 1D bool arrays, die dus een lagere dimensionaliteit hebben als x veel columnen/rows heeft.
+    print(f"Before update:\n{mask}")
     copy = np.array(current_mask, copy=True)
     copy[np.where(current_mask)] = mask
-    # print(f"Child mask:{current_mask=}")
-
-    # print(f"{current_mask=}")
-    # print(f"{mask_right=}")
-    # current_mask[np.where(current_mask)] = mask_left
-    # print(f"{current_mask=}")
-    # mask_right = np.where(current_mask, False, True)
-    # print(f"{mask_right=}")
-
-    # current_row_indexs = np.where(current_mask, mask_left, mask_right)
-    # print(f"{current_mask[current_row_indexs]=}")
-    # current_mask[current_row_indexs] = mask_left
-
-
-    # print(f"{current_row_indexs=}")
-    # print(f"{mask_left=}")
-    # print(f"{len(mask_left)=}")
-    # print(f"{mask_right=}")
-    # print(f"{len(mask_right)=}")
+    print(f"After update:\n{copy}")
     print("\t\t\t\t->updated row mask for child node")
     return copy
-    
+
 
 #
 #
@@ -322,7 +339,7 @@ def tree_grow(x=None,
     root = Node(split_value_or_rows=mask)
 
     # We instantieren ook gelijk het Tree object
-    tr = Tree(root)
+    tr = Tree(root, (n_min, min_leaf, n_feat))
 
     # De eerste nodelist heeft alleen de root node, daarna zijn twee childs,
     # etc. totdat alle splits gemaakt zijn en de lijst leeg is.
@@ -338,12 +355,14 @@ def tree_grow(x=None,
         # Gebruik de boolean mask van de node om de classes in de node uit y te halen
         node_classes = y[node.split_value_or_rows]
 
-        # print(f"{node_classes=}, {node_rows=}")
+        # print(f"{node_classes}, {node_rows}")
 
         # Test of de node een leaf node is met n_min
         if len(node_rows) < n_min:
             node.is_leaf_node(node_classes)
-            print("\t->Node has less rows than n_min, it is a leaf node, continueing to next node")
+            print(
+                "\t->Node has less rows than n_min, it is a leaf node, continueing to next node"
+            )
             continue
         print("\t->Node has more rows than n_min, it is not a leaf node")
 
@@ -358,129 +377,43 @@ def tree_grow(x=None,
             # "If the algorithm performs a split, it should be the best split that meets the minleaf constrain"
             #
             # We krijgen een exhaustive lijst terug met splits
-            exhaustive_best_list = exhaustive_split_search(node_rows, node_classes, min_leaf)
+            exhaustive_best_list = exhaustive_split_search(
+                node_rows, node_classes, min_leaf)
             # print(exhaustive_best_list)
             # Als de lijst leeg is zijn er geen potentieele splits die voldoen
             # an de min leaf constraint
             if not exhaustive_best_list:
                 node.is_leaf_node(node_classes)
-                print("\t\t->No split that fullfils min_leaf was found continueing to next node")
+                print(
+                    "\t\t->No split that fullfils min_leaf was found continueing to next node"
+                )
                 continue
-            print("\t->Exhaustive search found a split fulfilling the min_leaf rule!")
+            print(
+                "\t->Exhaustive search found a split fulfilling the min_leaf rule!"
+            )
             # Hier halen we de beste split, en rows voor de child/split nodes
             # uit de exhaustive best list
             best_split = max(exhaustive_best_list, key=lambda z: z[0])
+            print(f"\n######################best split tuple (delta_i, bool arrays voor child rows, split value, col)############################\n\n{best_split}\n\n###########################################################################################################################\n")
             # Hier voegen we de twee nieuwe nodes toe aan de gesplitte "parent"
-            nodelist += add_children(node, x, best_split)
+            nodelist += add_children(node, best_split)
             # node.add_split(left_child_node, right_child_node)
         else:
             node.is_leaf_node(node_classes)
             print("\t\t->The node is already pure, it is necessarily a leaf!")
             continue
-    print(tr)
+    # print(tr)
     return tr
-
-    # Initiate the nodelist with tuples of slice and class labels
-    # nodelist = [Node(value=slices)]
-    # tree = Tree(nodelist[0])
-    # while nodelist:
-    #     current_node = nodelist.pop()
-    #     slices = current_node.value
-    #     node_classes = y[slices]
-    #     # print(node_classes)
-
-    #     # f'Current node will be leaf node if (( (number of data "tuples" in child node) < {n_min=} )) \n'
-    #     # put stopping rules here before making a split
-    #     if len(node_classes) < n_min:
-    #         current_node.value = Leaf(
-    #             np.argmax(np.bincount(node_classes.astype(int))))
-    #         print(f"leaf node has majority clas:\n{current_node.value.value=}")
-    #         continue
-
-    #     if impurity(node_classes) > 0:
-    #         # print(
-    #         #     f"Exhaustive split search says, new node will check these rows for potential spliterinos:\n{x[slices]}"
-    #         # )
-
-    #         # If we arrive here ever we are splitting
-    #         # bestsplit(col, node_labels) ->
-    #         # {"slices": list[int], "split": numpyfloat, "best_delta_i": numpyfloat}
-
-    #         # slices (list) used for knowing which rows (int) to consider in a node
-    #         # best_split saved in current_node.value
-    #         # best_delta_i used to find best split among x_columns
-    #         best_dict = None
-    #         for i, x_col in enumerate(x[slices].transpose()):
-    #             print(
-    #                 "\nExhaustive split search says; \"Entering new column\":")
-    #             col_split_dict = bestsplit(x_col, node_classes, slices)
-
-    #             if best_dict is not None:
-    #                 if col_split_dict["delta_i"] > best_dict["delta_i"]:
-    #                     best_dict = col_split_dict
-    #                     best_dict["col"] = i
-    #             else:
-    #                 best_dict = col_split_dict
-    #                 best_dict["col"] = i
-    #         print("\nThe best split for current node:", best_dict)
-
-    #         # Here we store the splitted data into Node objects
-    #         current_node.value = best_dict["split"]
-    #         current_node.col = best_dict["col"]
-    #         # Split will not happen if (( (number of data "tuples" potential split) < {min_leaf=} ))\n'
-    #         if min([len(x) for x in best_dict["slices"].values()]) < min_leaf:
-    #             continue
-    #         else:
-    #             # Invert left and right because we want left to pop() first
-    #             children = [
-    #                 Node(value=best_dict["slices"]["right"]),
-    #                 Node(value=best_dict["slices"]["left"])
-    #             ]
-    #             current_node.add_split(children[1], children[0])
-    #             nodelist += children
-    #     else:
-    #         current_node.value = Leaf(
-    #             np.argmax(np.bincount(node_classes.astype(int))))
-    #         print(
-    #             f"\n\nLEAF NODE has majority clas:\n{current_node.value.value=}"
-    #         )
-    #         continue
-
-
-def predict(x, nodes) -> list:
-    """
-    @todo: Docstring for predict
-    """
-    # which row to drop
-    # print(x)
-    drop = 0
-    while not set(nodes).issubset({0, 1}):
-        print(nodes)
-        # print(x[drop])
-        if isinstance(nodes[drop].value, Leaf):
-            nodes[drop] = nodes[drop].value.value
-            drop += 1
-            continue
-
-        print(nodes[drop].value)
-        print(nodes[drop].col)
-        # print(nodes[drop].col)
-        if x[drop, nodes[drop].col] > nodes[drop].value:
-            nodes[drop] = nodes[drop].left
-        else:
-            nodes[drop] = nodes[drop].right
-    return np.array(nodes)
 
 
 def tree_pred(x=None, tr=None, **defaults) -> np.array:
     """
     @todo: Docstring for tree_pred
     """
-    nodes = [tr.tree] * len(x)
-    # y = np.linspace(0, len(x), 0)
-    # y = np.array(ele)
-    y = predict(x, nodes)
-    print(f"\n\nPredicted classes for {x=}\n\n are: {y=}")
+    y = tr.predict(x)
+    n_min, min_leaf, n_feat = tr.hyper_params
+    print("-"*80+f"\nPrediction parameters:\nn_min={n_min}\nmin_leaf={min_leaf}\nn_feat={n_feat}")
+    print(f"\nFor x rows\n{x}\n\n predicted classes are:\n {y}")
     return y
 
 
@@ -500,19 +433,16 @@ if __name__ == '__main__':
         'y': credit_data[:, 5],
         'n_min': 2,
         'min_leaf': 1,
-        'n_feat': 5
+        'n_feat': None # 5, should be 5 for bootstrapping folds
     }
 
     # Calling the tree grow, unpacking default as argument
     tree_grow(**tree_grow_defaults)
 
     #### TREE_PRED TEST
-    # tree_pred_defaults = {
-    #     'x': credit_data[:, :5],
-    #     'tr': tree_grow(**tree_grow_defaults)
-    # }
+    tree_pred_defaults = {
+        'x': credit_data[:, :5],
+        'tr': tree_grow(**tree_grow_defaults)
+    }
 
-    # tree_pred(**tree_pred_defaults)
-
-# start_time = time.time()
-# print("--- %s seconds ---" % (time.time() - start_time))
+    tree_pred(**tree_pred_defaults)
