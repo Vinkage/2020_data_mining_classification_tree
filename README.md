@@ -1,6 +1,6 @@
 # 2020_data_mining_assignments
-[link to assignment](http://www.cs.uu.nl/docs/vakken/mdm/assignment1-2020.pdf)
-[link to article datasets part 2](https://www.st.cs.uni-saarland.de/softevo/bug-data/eclipse/promise2007-dataset-20a.pdf)
+* [link to assignment](http://www.cs.uu.nl/docs/vakken/mdm/assignment1-2020.pdf)
+* [link to article datasets part 2](https://www.st.cs.uni-saarland.de/softevo/bug-data/eclipse/promise2007-dataset-20a.pdf)
 
 ## Part1, tree algorithm/implementation:
 - [X] tree_grow functie die het [pseudocode in de slides](./media/tree_grow_pseudo_code.png) volgt
