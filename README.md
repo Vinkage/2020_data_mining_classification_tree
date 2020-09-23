@@ -3,7 +3,7 @@
 * [link to article datasets part 2](https://www.st.cs.uni-saarland.de/softevo/bug-data/eclipse/promise2007-dataset-20a.pdf)
 
 ## Part1, tree algorithm/implementation:
-- [X] tree_grow functie die het [pseudocode in de slides](./media/tree_grow_pseudo_code.png) volgt
+- [X] [tree_grow](https://github.com/Vinkage/2020_data_mining_assignments/blob/e650ad27d13b392f5b6535906e36176cb0777650/assignment1.py#L321-L406) functie die het [pseudocode in de slides](./media/tree_grow_pseudo_code.png) volgt
 - [ ] tree_grow aanpassen voor n_feat, een paar lines die zeggen dat de rows die aan exhaustivesplitsearch gegeven worden random uit x gepakt moeten worden
 - [ ] tree_grow_b bootstrap versie van tree grow, die een lijst van tree construct door met replacement rows uit x te kiezen
 
