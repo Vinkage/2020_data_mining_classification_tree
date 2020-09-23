@@ -16,7 +16,7 @@
 - [ ] Figure out how we want to compute the confusion matrix (scipy?)
 
 ### Official steps
-![](./steps_data_anal.png)
+![](./media/steps_data_anal.png)
 
 ## The report
-![](./report_reqs.png)
+![](./media/report_reqs.png)
