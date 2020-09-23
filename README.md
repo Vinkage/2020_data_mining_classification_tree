@@ -11,6 +11,7 @@
 - [ ] tree_pred_b een functie die een lijst van tree kan gebruiken om een voorspelling te maken voor rows in een data array x
 - [ ] Figure out how we want to compute the confusion matrix (scipy?)
 - [ ] Test prediction of single tree on pima indians data with nmin 20 and minleaf 5, check with confusion matrix in [link to assignment](http://www.cs.uu.nl/docs/vakken/mdm/assignment1-2020.pdf)
+- [ ] Test prediction on [educode](https://uu.educode.nl/login/?next=/submissions/646/feedback/95016)
 
 
 ## Part2, data analysis:
