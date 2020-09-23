@@ -221,7 +221,7 @@ def bestsplit(x, y, min_leaf) -> None:
             continue
 
         # delta_i formule
-        delta_i = impurity_parent - (
+        delta_i = (
             impurity(classes_left) * len(classes_left) +
             impurity(classes_right) * len(classes_right)) / n_classes_parent
         # stop huidige splits in de lijst om best split te berekenen
@@ -232,7 +232,7 @@ def bestsplit(x, y, min_leaf) -> None:
     # Bereken de best split voor deze x col, als er ten minste 1 bestaat die
     # voldoet aan min leaf
     if best_list:
-        return max(best_list, key=lambda x: x[0])
+        return min(best_list, key=lambda x: x[0])
     else:
         return False
 
@@ -393,7 +393,7 @@ def tree_grow(x=None,
             )
             # Hier halen we de beste split, en rows voor de child/split nodes
             # uit de exhaustive best list
-            best_split = max(exhaustive_best_list, key=lambda z: z[0])
+            best_split = min(exhaustive_best_list, key=lambda z: z[0])
             print(f"\n######################best split tuple (delta_i, bool arrays voor child rows, split value, col)############################\n\n{best_split}\n\n###########################################################################################################################\n")
             # Hier voegen we de twee nieuwe nodes toe aan de gesplitte "parent"
             nodelist += add_children(node, best_split)
