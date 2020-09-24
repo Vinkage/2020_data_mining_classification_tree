@@ -1,6 +1,6 @@
 import numpy as np
 
-credit_data = np.genfromtxt('./credit_score.txt',
+credit_data = np.genfromtxt('./data/credit_score.txt',
                             delimiter=',',
                             skip_header=True)
 
@@ -88,6 +88,7 @@ class Tree:
         while not all(pred_class in {0,1} for pred_class in nodes):
             # Als de col None is dan is het een leaf node, dus dan is de row
             # van x hier beland
+            # print(nodes[drop].col, nodes[drop].split_value_or_rows)
             if nodes[drop].col is None:
                 nodes[drop] = nodes[drop].split_value_or_rows
                 drop += 1
@@ -184,12 +185,14 @@ def bestsplit(x, y, min_leaf) -> None:
      36
     """
     x_sorted = np.sort(np.unique(x))
-    if len(x_sorted) <= 2:
-        # Allows splitting on categorical (0 or 1) cols
-        split_points = x_sorted / 2
-    else:
-        # Take average between consecutive numerical rows in the x col
-        split_points = (x_sorted[:len(x_sorted) - 1] + x_sorted[1:]) / 2
+    # if len(x_sorted) <= 2:
+    #     # Allows splitting on categorical (0 or 1) cols
+    #     split_points = x_sorted / 2
+    # else:
+    #     # Take average between consecutive numerical rows in the x col
+    #     split_points = (x_sorted[:len(x_sorted) - 1] + x_sorted[1:]) / 2
+
+    split_points = (x_sorted[:len(x_sorted) - 1] + x_sorted[1:]) / 2
 
     # De toepassing van bestsplit verdeelt de x col vector in tweeen, twee
     # arrays van "x rows". Deze moeten we terug krijgen om de in de child nodes
@@ -199,21 +202,29 @@ def bestsplit(x, y, min_leaf) -> None:
     # twee "x rows" arrays we moeten returnen, en welke split value het beste
     # was natuurlijk.
 
-    # Hieren stoppen we (delta_i, split_value, rows_left, rows_right)
-    best_list = []
+    # Hieren stoppen we (rows for children, delta_i, split value, col will be added later)
+    best_array = np.zeros((split_points.shape[0], x.shape[0] + 3), dtype='float64')
+    # print(f"{best_array=}")
     # Stop wanneer de array met split points leeg is
     while split_points.size != 0:
         # Huidige split value
         split_value = split_points[-1]
+        # print(split_value)
         # boolean masks om x rows mee te masken/slicen
-        mask_left, mask_right = x > split_value, x <= split_value
+        # print(best_array.shape)
+        current_row_of_best_array = split_points.shape[0]-1
+        best_array[current_row_of_best_array, :x.shape[0]] = x > split_value
+        # print(best_array)
+        # print(f"{best_array[current_row_of_best_array,:-2]=}")
 
         # class voor beide split kanten
-        classes_left, classes_right = y[mask_left], y[mask_right]
+        classes_left, classes_right = y[best_array[current_row_of_best_array,:-3].astype(bool)], y[np.invert(best_array[current_row_of_best_array,:-3].astype(bool))]
+        # print(f"{classes_left=} {classes_right=}")
 
         # Kijk of er genoeg rows in de gesplitte nodes terechtkomen, anders
         # mogen we de split niet toelaten vanwege de min_leaf constraint
-        if len(classes_left) < min_leaf or len(classes_right) < min_leaf:
+        # print(f"{classes_left.shape[0]=}")
+        if classes_left.shape[0] < min_leaf or classes_right.shape[0] < min_leaf:
             # Haal de huidige split_point uit split_points
             split_points = split_points[:-1]
             continue
@@ -222,19 +233,19 @@ def bestsplit(x, y, min_leaf) -> None:
         # account, and not making the weighted average but the weigthed sum
         # only (thanks Lonnie)
         delta_i = (
-            impurity(classes_left) * len(classes_left) +
-            impurity(classes_right) * len(classes_right))
+            impurity(classes_left) * classes_left.shape[0] +
+            impurity(classes_right) * classes_right.shape[0])
         # stop huidige splits in de lijst om best split te berekenen
-        best_list.append((delta_i, mask_left, mask_right, split_value))
+        # print(f"{np.array((delta_i, mask_left, mask_right, split_value))=}")
+        # print(f"{best_array[:, classes_left.shape[0]-1]=}")  
+        best_array[current_row_of_best_array,-3:-1] = delta_i, split_value
+        # print(best_array)
         # Haal de huidige split_point uit split_points
         split_points = split_points[:-1]
 
     # Bereken de best split voor deze x col, als er ten minste 1 bestaat die
     # voldoet aan min leaf
-    if best_list:
-        return min(best_list, key=lambda x: x[0])
-    else:
-        return False
+    return best_array
 
 
 def exhaustive_split_search(rows, classes, min_leaf):
@@ -244,19 +255,18 @@ def exhaustive_split_search(rows, classes, min_leaf):
     print("\t\t->entering exhaustive split search")
     # We hebben enumerate nodig, want we willen weten op welke col
     # (age,married,house,income,gender) we een split doen
-    exhaustive_best_list = []
+    exhaustive_best_array = np.zeros((1, rows.shape[0] + 3), dtype='float64')
     print(f"Rows:\n{rows},\n Classes:\n{classes}")
     for i, col in enumerate(rows.transpose()):
         # calculate the best split for the col that satisfies the min_leaf
         # constraint
-        col_best_split = bestsplit(col, classes, min_leaf)
-        # Check if there was a split fullfilling the min leaf rule
-        if col_best_split:
-            # add for which row we calculated the best split
-            col_best_split += (i, )
-            exhaustive_best_list.append(col_best_split)
+        best_array_for_col = bestsplit(col, classes, min_leaf)
+        # add col number to rows
+        best_array_for_col[:,-1] = i
+        exhaustive_best_array = np.vstack((exhaustive_best_array, best_array_for_col))
+    print("The array with exhaustive splits is\n", exhaustive_best_array)
     print("\t\t->returning from exhaustive split search")
-    return exhaustive_best_list
+    return exhaustive_best_array
 
 
 def add_children(node, best_split):
@@ -268,16 +278,11 @@ def add_children(node, best_split):
     # need this to update the rows for the children
     current_mask = node.split_value_or_rows
 
-    # Unpacking the best_split tuple
-    mask_left, mask_right, node_split_value, node_col = best_split[1:]
-    # print(f"{mask_left}, {mask_right}, {node_split_value}, {node_col}")
-
     # Give the current node the split_value and col it needs for predictions
-    node.split_value_or_rows, node.col = node_split_value, node_col
+    node.split_value_or_rows, node.col = best_split[-2], int(best_split[-1])
 
     # Updating the row masks to give it to children, keeping numpy dimension consistent
-    mask_left, mask_right = update_mask(mask_left, current_mask), update_mask(
-        mask_right, current_mask)
+    mask_left, mask_right = update_mask(best_split[:-3], current_mask)
 
     # Adding the pointer between parent and children
     node.add_split(Node(split_value_or_rows=mask_left), Node(split_value_or_rows=mask_right))
@@ -305,12 +310,18 @@ def update_mask(mask, current_mask):
     # nodes... weet niet wat beter is, het kan best veel geheugen in beslag
     # nemen voor grote dataset neem ik aan... Op de manier hier zijn er altijd
     # maar 1D bool arrays, die dus een lagere dimensionaliteit hebben als x veel columnen/rows heeft.
-    print(f"Before update:\n{mask}")
-    copy = np.array(current_mask, copy=True)
-    copy[np.where(current_mask)] = mask
-    print(f"After update:\n{copy}")
+    current_mask = np.vstack((current_mask, current_mask))
+    print(f"\nBefore update (upper rows goes to the left child, bottom to the right):\n{current_mask}")
+    # print(mask)
+    # print(mask.astype(bool))
+    # print(current_mask[current_mask == True])
+    current_mask[0][current_mask[0] == True] = mask.astype(bool)
+    current_mask[1][current_mask[1] == True] = np.invert(mask.astype(bool))
+    # copy = np.array(current_mask, copy=True)
+    # copy[np.where(current_mask)] = mask
+    print(f"After update:\n{current_mask}")
     print("\t\t\t\t->updated row mask for child node")
-    return copy
+    return current_mask[0], current_mask[1]
 
 
 #
@@ -377,12 +388,12 @@ def tree_grow(x=None,
             # "If the algorithm performs a split, it should be the best split that meets the minleaf constrain"
             #
             # We krijgen een exhaustive lijst terug met splits
-            exhaustive_best_list = exhaustive_split_search(
+            exhaustive_best_array = exhaustive_split_search(
                 node_rows, node_classes, min_leaf)
             # print(exhaustive_best_list)
             # Als de lijst leeg is zijn er geen potentieele splits die voldoen
             # an de min leaf constraint
-            if not exhaustive_best_list:
+            if exhaustive_best_array.shape[0] == 1:
                 node.is_leaf_node(node_classes)
                 print(
                     "\t\t->No split that fullfils min_leaf was found continueing to next node"
@@ -393,8 +404,8 @@ def tree_grow(x=None,
             )
             # Hier halen we de beste split, en rows voor de child/split nodes
             # uit de exhaustive best list
-            best_split = min(exhaustive_best_list, key=lambda z: z[0])
-            print(f"\n######################best split tuple (delta_i, bool arrays voor child rows, split value, col)############################\n\n{best_split}\n\n###########################################################################################################################\n")
+            best_split = exhaustive_best_array[np.argmin(exhaustive_best_array[1:,-3]) + 1]
+            print(f"\n######################best split array, the last three element=[delta_i, splitvalue, col/attribute], the rest is boolean include or not include row in child node############################\n\n{best_split}\n\n###############################################################################\n")
             # Hier voegen we de twee nieuwe nodes toe aan de gesplitte "parent"
             nodelist += add_children(node, best_split)
             # node.add_split(left_child_node, right_child_node)
