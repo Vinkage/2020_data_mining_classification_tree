@@ -1,8 +1,9 @@
 import numpy as np
+from sklearn import metrics
+import pstats
+from pstats import SortKey
+import cProfile
 
-credit_data = np.genfromtxt('./data/credit_score.txt',
-                            delimiter=',',
-                            skip_header=True)
 
 # age,married,house,income,gender,class
 # [(22, 0, 0, 28, 1, 0)
@@ -166,7 +167,7 @@ def impurity(array) -> int:
     return gini_index
 
 
-def bestsplit(x, y, min_leaf) -> None:
+def bestsplit(x, y, minleaf) -> None:
     """
     x = vector of single col
     y = vector of classes (last col in x)
@@ -193,6 +194,7 @@ def bestsplit(x, y, min_leaf) -> None:
     #     split_points = (x_sorted[:len(x_sorted) - 1] + x_sorted[1:]) / 2
 
     split_points = (x_sorted[:len(x_sorted) - 1] + x_sorted[1:]) / 2
+    # print(split_points)
 
     # De toepassing van bestsplit verdeelt de x col vector in tweeen, twee
     # arrays van "x rows". Deze moeten we terug krijgen om de in de child nodes
@@ -212,19 +214,17 @@ def bestsplit(x, y, min_leaf) -> None:
         # print(split_value)
         # boolean masks om x rows mee te masken/slicen
         # print(best_array.shape)
-        current_row_of_best_array = split_points.shape[0]-1
-        best_array[current_row_of_best_array, :x.shape[0]] = x > split_value
         # print(best_array)
         # print(f"{best_array[current_row_of_best_array,:-2]=}")
 
         # class voor beide split kanten
-        classes_left, classes_right = y[best_array[current_row_of_best_array,:-3].astype(bool)], y[np.invert(best_array[current_row_of_best_array,:-3].astype(bool))]
+        classes_left, classes_right = y[x > split_value], y[x <= split_value]
         # print(f"{classes_left=} {classes_right=}")
 
         # Kijk of er genoeg rows in de gesplitte nodes terechtkomen, anders
-        # mogen we de split niet toelaten vanwege de min_leaf constraint
+        # mogen we de split niet toelaten vanwege de minleaf constraint
         # print(f"{classes_left.shape[0]=}")
-        if classes_left.shape[0] < min_leaf or classes_right.shape[0] < min_leaf:
+        if classes_left.shape[0] < minleaf or classes_right.shape[0] < minleaf:
             # Haal de huidige split_point uit split_points
             split_points = split_points[:-1]
             continue
@@ -238,6 +238,8 @@ def bestsplit(x, y, min_leaf) -> None:
         # stop huidige splits in de lijst om best split te berekenen
         # print(f"{np.array((delta_i, mask_left, mask_right, split_value))=}")
         # print(f"{best_array[:, classes_left.shape[0]-1]=}")  
+        current_row_of_best_array = split_points.shape[0]-1
+        best_array[current_row_of_best_array, :x.shape[0]] = x > split_value
         best_array[current_row_of_best_array,-3:-1] = delta_i, split_value
         # print(best_array)
         # Haal de huidige split_point uit split_points
@@ -248,25 +250,25 @@ def bestsplit(x, y, min_leaf) -> None:
     return best_array
 
 
-def exhaustive_split_search(rows, classes, min_leaf):
+def exhaustive_split_search(rows, classes, minleaf):
     """
     @todo: Docstring for exhaustive_split_search
     """
-    print("\t\t->entering exhaustive split search")
+    # print("\t\t->entering exhaustive split search")
     # We hebben enumerate nodig, want we willen weten op welke col
     # (age,married,house,income,gender) we een split doen
     exhaustive_best_array = []
-    print(f"Rows:\n{rows},\n Classes:\n{classes}")
+    # print(f"Rows:\n{rows},\n Classes:\n{classes}")
     for i, col in enumerate(rows.transpose()):
-        # calculate the best split for the col that satisfies the min_leaf
+        # calculate the best split for the col that satisfies the minleaf
         # constraint
-        best_array_for_col = bestsplit(col, classes, min_leaf)
+        best_array_for_col = bestsplit(col, classes, minleaf)
         # add col number to rows
         best_array_for_col[:,-1] = i
         exhaustive_best_array.append(best_array_for_col)
     exhaustive_best_array = np.concatenate(exhaustive_best_array)
-    print("The array with exhaustive splits is\n", exhaustive_best_array)
-    print("\t\t->returning from exhaustive split search")
+    # print("The array with exhaustive splits is\n", exhaustive_best_array)
+    # print("\t\t->returning from exhaustive split search")
     return exhaustive_best_array
 
 
@@ -274,7 +276,7 @@ def add_children(node, best_split):
     """
     @todo: Docstring for add_children
     """
-    print("\t\t\t->entering add children")
+    # print("\t\t\t->entering add children")
     # The mask that was used to get the rows for the current node from x, we
     # need this to update the rows for the children
     current_mask = node.split_value_or_rows
@@ -287,7 +289,7 @@ def add_children(node, best_split):
 
     # Adding the pointer between parent and children
     node.add_split(Node(split_value_or_rows=mask_left), Node(split_value_or_rows=mask_right))
-    print("\t\t\t->children added to node and node list\n")
+    # print("\t\t\t->children added to node and node list\n")
     return [node.left, node.right]
 
 
@@ -296,9 +298,9 @@ def update_mask(mask, current_mask):
     Updates the spit bool array from any dimension to an array with length
     equal to the total number of rows in dataset x.
     """
-    print(
-        "\t\t\t\t->entering update mask to update mask that calculates which rows belong to child"
-    )
+    # print(
+    #     "\t\t\t\t->entering update mask to update mask that calculates which rows belong to child"
+    # )
     # Copy heb ik gedaan omdat we een slice assignment doen.
     #
     # Het punt van deze functie is dat tijdens het tree growen het aantal rows
@@ -312,7 +314,7 @@ def update_mask(mask, current_mask):
     # nemen voor grote dataset neem ik aan... Op de manier hier zijn er altijd
     # maar 1D bool arrays, die dus een lagere dimensionaliteit hebben als x veel columnen/rows heeft.
     current_mask = np.vstack((current_mask, current_mask))
-    print(f"\nBefore update (upper rows goes to the left child, bottom to the right):\n{current_mask}")
+    # print(f"\nBefore update (upper rows goes to the left child, bottom to the right):\n{current_mask}")
     # print(mask)
     # print(mask.astype(bool))
     # print(current_mask[current_mask == True])
@@ -320,8 +322,8 @@ def update_mask(mask, current_mask):
     current_mask[1][current_mask[1] == True] = np.invert(mask.astype(bool))
     # copy = np.array(current_mask, copy=True)
     # copy[np.where(current_mask)] = mask
-    print(f"After update:\n{current_mask}")
-    print("\t\t\t\t->updated row mask for child node")
+    # print(f"After update:\n{current_mask}")
+    # print("\t\t\t\t->updated row mask for child node")
     return current_mask[0], current_mask[1]
 
 
@@ -332,9 +334,9 @@ def update_mask(mask, current_mask):
 
 def tree_grow(x=None,
               y=None,
-              n_min=None,
-              min_leaf=None,
-              n_feat=None,
+              nmin=None,
+              minleaf=None,
+              nfeat=None,
               **defaults) -> Tree:
     """
     @todo: Docstring for tree_grow
@@ -351,68 +353,89 @@ def tree_grow(x=None,
     root = Node(split_value_or_rows=mask)
 
     # We instantieren ook gelijk het Tree object
-    tr = Tree(root, (n_min, min_leaf, n_feat))
+    tr = Tree(root, (nmin, minleaf, nfeat))
 
     # De eerste nodelist heeft alleen de root node, daarna zijn twee childs,
     # etc. totdat alle splits gemaakt zijn en de lijst leeg is.
     nodelist = [root]
 
     while nodelist:
-        print("->Taking new node from the node list")
+        # print("->Taking new node from the node list")
         # Pop de current node uit de nodelist
         node = nodelist.pop()
         # Gebruik de boolean mask van de node om de rows in de node uit x te halen
-        node_rows = x[node.split_value_or_rows]
         # print(node_rows)
         # Gebruik de boolean mask van de node om de classes in de node uit y te halen
         node_classes = y[node.split_value_or_rows]
+        # print(node_classes)
 
         # print(f"{node_classes}, {node_rows}")
 
-        # Test of de node een leaf node is met n_min
-        if len(node_rows) < n_min:
+        # Test of de node een leaf node is met nmin
+        if len(node_classes) < nmin:
             node.is_leaf_node(node_classes)
             print(
-                "\t->Node has less rows than n_min, it is a leaf node, continueing to next node"
+                "\t->Leafnode! Node has less rows than nmin, it is a leaf node, continueing to next node"
             )
             continue
-        print("\t->Node has more rows than n_min, it is not a leaf node")
+        # print("\t->Node has more rows than nmin, it is not a leaf node")
 
         # Als de node niet puur is, probeer dan te splitten
         if impurity(node_classes) > 0:
-            print("\t->Node is not pure yet starting exhaustive split search")
+            # print("\t->Node is not pure yet starting exhaustive split search")
+
+            # Pick a random set of cols from rows (nfeat, important for forests)
+            nfeat_col_choice = np.random.choice(range(x.shape[1]), nfeat, replace=False)
+            node_rows = x[node.split_value_or_rows][:,np.sort(nfeat_col_choice)]
+
             # We gaan exhaustively voor de rows in de node over de cols
             # (age,married,house,income,gender) om de bestsplit te
             # bepalen
             #
-            # We geven min_leaf als argument omdat:
+            # We geven minleaf als argument omdat:
             # "If the algorithm performs a split, it should be the best split that meets the minleaf constrain"
             #
             # We krijgen een exhaustive lijst terug met splits
             exhaustive_best_array = exhaustive_split_search(
-                node_rows, node_classes, min_leaf)
-            # print(exhaustive_best_list)
-            # Als de lijst leeg is zijn er geen potentieele splits die voldoen
-            # an de min leaf constraint
-            if exhaustive_best_array.shape[0] == 1:
+                node_rows, node_classes, minleaf)
+            
+            # Als de array alleen maar zeroes heeft -> no splits for the minleaf leaf node
+            # print(exhaustive_best_array[:,:-1].any())
+            # raise SystemExit
+            if not exhaustive_best_array[:,:-1].any():
                 node.is_leaf_node(node_classes)
                 print(
-                    "\t\t->No split that fullfils min_leaf was found continueing to next node"
+                    "\t\t->Leaf node! No split that fullfils minleaf was found continueing to next node"
                 )
                 continue
-            print(
-                "\t->Exhaustive search found a split fulfilling the min_leaf rule!"
-            )
+            # print(
+            #     "\t->Exhaustive search found a split fulfilling the minleaf rule!"
+            # )
             # Hier halen we de beste split, en rows voor de child/split nodes
             # uit de exhaustive best list
-            best_split = exhaustive_best_array[np.argmin(exhaustive_best_array[1:,-3]) + 1]
-            print(f"\n######################best split array, the last three element=[delta_i, splitvalue, col/attribute], the rest is boolean include or not include row in child node############################\n\n{best_split}\n\n###############################################################################\n")
+            # [(exhaustive_best_array[:,:-3] == 0).sum(axis=1)]
+            best_split = exhaustive_best_array[exhaustive_best_array[:,:-3].sum(axis=1) != 0][np.argmin(exhaustive_best_array[:,-3])]
+            # print((exhaustive_best_array[:,:-3] == 0).sum(axis=1))
+            # print(exhaustive_best_array.shape)
+            # print(exhaustive_best_array)
+            # print(exhaustive_best_array[:,:-3])
+            # print(exhaustive_best_array[:,:-3] == 0)
+            # print(exhaustive_best_array[:,:-3].sum(axis=1) != 0)
+            # print(exhaustive_best_array[exhaustive_best_array[:,:-3]])
+            # print(exhaustive_best_array[exhaustive_best_array[:,:-3].sum(axis=0) == 0].shape)
+            # print(exhaustive_best_array[exhaustive_best_array[:,:-3].sum(axis=0) == 0][:,-3].shape)
+            # print(best_split)
+            # raise SystemExit
+            # print(exhaustive_best_array[:,:-1])
+            # raise SystemExit
+            # print(f"\n######################best split array, the last three element=[delta_i, splitvalue, col/attribute], the rest is boolean include or not include row in child node############################\n\n{best_split}\n\n###############################################################################\n")
             # Hier voegen we de twee nieuwe nodes toe aan de gesplitte "parent"
             nodelist += add_children(node, best_split)
+            # print(exhaustive_best_array.shape)
             # node.add_split(left_child_node, right_child_node)
         else:
             node.is_leaf_node(node_classes)
-            print("\t\t->The node is already pure, it is necessarily a leaf!")
+            print("\t\t->Leafnode! The node is already pure, it is necessarily a leaf!")
             continue
     # print(tr)
     return tr
@@ -422,14 +445,22 @@ def tree_pred(x=None, tr=None, **defaults) -> np.array:
     """
     @todo: Docstring for tree_pred
     """
-    y = tr.predict(x)
-    n_min, min_leaf, n_feat = tr.hyper_params
-    print("-"*80+f"\nPrediction parameters:\nn_min={n_min}\nmin_leaf={min_leaf}\nn_feat={n_feat}")
-    print(f"\nFor x rows\n{x}\n\n predicted classes are:\n {y}")
+    y = tr.predict(x).astype(float)
+    nmin, minleaf, nfeat = tr.hyper_params
+    print(np.mean(pima_indians[:,-1] == y))
+    # print("-"*80+f"\nPrediction parameters:\nnmin={nmin}\nminleaf={minleaf}\nnfeat={nfeat}")
+    # print(f"\nFor x rows\n{x}\n\n predicted classes are:\n {y}")
     return y
 
 
 if __name__ == '__main__':
+    # credit_data = np.genfromtxt('./data/credit_score.txt',
+    #                             delimiter=',',
+    #                             skip_header=True)
+
+    pima_indians = np.genfromtxt('./data/pima_indians.csv',
+                                delimiter=',',
+                                skip_header=True)
     #### IMPURITY TEST
     # array=np.array([1,0,1,1,1,0,0,1,1,0,1])
     # print(impurity(array))
@@ -440,21 +471,36 @@ if __name__ == '__main__':
     # Should give 36
 
     #### TREE_GROW TEST
-    tree_grow_defaults = {
-        'x': credit_data[:, :5],
-        'y': credit_data[:, 5],
-        'n_min': 2,
-        'min_leaf': 1,
-        'n_feat': None # 5, should be 5 for bootstrapping folds
-    }
+    # tree_grow_defaults = {
+    #     'x': credit_data[:, :5],
+    #     'y': credit_data[:, 5],
+    #     'nmin': 2,
+    #     'minleaf': 1,
+    #     'nfeat': None # 5, should be 5 for bootstrapping folds
+    # }
 
     # Calling the tree grow, unpacking default as argument
     # tree_grow(**tree_grow_defaults)
 
     #### TREE_PRED TEST
-    tree_pred_defaults = {
-        'x': credit_data[:, :5],
-        'tr': tree_grow(**tree_grow_defaults)
-    }
+    # tree_pred_defaults = {
+    #     'x': credit_data[:, :5],
+    #     'tr': tree_grow(**tree_grow_defaults)
+    # }
 
-    tree_pred(**tree_pred_defaults)
+    # y_pred = tree_pred(x=credit_data[:,:5], tr=tree_grow(x=credit_data[:,0:5], y=credit_data[:,5], nmin=2, minleaf=1, nfeat=5), dataset='credit score')
+    # print(credit_data[:,5] == y_pred)
+
+    # predictions = tree_pred(x=pima_indians[:,:8], tr=tree_grow(x=pima_indians[:,:8], y=pima_indians[:,8], nmin=20, minleaf=5, nfeat=pima_indians.shape[1]-1), dataset='pima indians')
+    # print(np.mean(pima_indians[:,8] == y_pred))
+
+    # Time profile of credit data prediction with single tree
+    # cProfile.run("tree_pred(x=credit_data[:,:5], tr=tree_grow(x=credit_data[:,0:5], y=credit_data[:,5], nmin=2, minleaf=1, nfeat=5), dataset='credit score')", 'restats')
+
+    # Time profile of pima indians data prediction with single tree
+    cProfile.run("tree_pred(x=pima_indians[:,:8], tr=tree_grow(x=pima_indians[:,:8], y=pima_indians[:,8], nmin=20, minleaf=5, nfeat=pima_indians.shape[1]-1), dataset='pima indians')", 'restats')
+
+
+    p = pstats.Stats('restats')
+    p.sort_stats(SortKey.TIME)
+    p.print_stats()
