@@ -4,7 +4,7 @@
 
 ## Part1, tree algorithm/implementation:
 - [X] tree_grow functie die het [pseudocode in de slides](./media/tree_grow_pseudo_code.png) volgt
-- [ ] tree_grow aanpassen voor n_feat, een paar lines die zeggen dat de rows die aan exhaustivesplitsearch gegeven worden random uit x gepakt moeten worden
+- [ ] tree_grow aanpassen voor nfeat, een paar lines die zeggen dat de rows die aan exhaustivesplitsearch gegeven worden random uit x gepakt moeten worden
 - [ ] tree_grow_b bootstrap versie van tree grow, die een lijst van tree construct door met replacement rows uit x te kiezen
 
 - [X] [tree_pred functie](https://github.com/Vinkage/2020_data_mining_assignments/blob/da8ca975fb9d11d3801fef66344736e675734c42/assignment1.py#L77-L103) met efficiente conditional branches 
