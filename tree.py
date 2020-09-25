@@ -90,7 +90,6 @@ class Tree:
 
         # # De index van de row van x die we in de boom willen droppen
         drop = 0
-        node = nodes[0]
         while nodes.size != 0:
             node = nodes[0]
             if node.col is None:
