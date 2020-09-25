@@ -345,11 +345,11 @@ def tree_pred_b(x=None, tr=None, training=None, **defaults) -> np.array:
         # print(np.mean(training == y))
         if nfeat == x.shape[1]:
             print(
-                f'Results from: prediction bagged tree({nmin=}, {minleaf=}, {nfeat=})'
+                f'Results from: prediction bagged tree({nmin=}, {minleaf=}, {nfeat=}, bootstraps={len(tr)})'
             )
         else:
             print(
-                f'Results from: prediction random forest tree({nmin=}, {minleaf=}, {nfeat=})'
+                f'Results from: prediction random forest({nmin=}, {minleaf=}, {nfeat=}, bootstraps={len(tr)})'
             )
         print(
             f'\t->Confusion matrix:\n{metrics.confusion_matrix(y, training)}')
