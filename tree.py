@@ -345,11 +345,11 @@ def tree_pred_b(x=None, tr=None, training=None, **defaults) -> np.array:
         # print(np.mean(training == y))
         if nfeat == x.shape[1]:
             print(
-                f'Results from: prediction bagged tree({nmin=}, {minleaf=}, {nfeat=}, bootstraps={len(tr)})'
+                f'Results from: prediction bagged tree({nmin=}, {minleaf=}, {nfeat=}, trees={len(tr)})'
             )
         else:
             print(
-                f'Results from: prediction random forest({nmin=}, {minleaf=}, {nfeat=}, bootstraps={len(tr)})'
+                f'Results from: prediction random forest({nmin=}, {minleaf=}, {nfeat=}, trees={len(tr)})'
             )
         print(
             f'\t->Confusion matrix:\n{metrics.confusion_matrix(y, training)}')
@@ -397,7 +397,7 @@ if __name__ == '__main__':
               training=pima_indians[:, 8])
 
 
-    print('\nDataset: pima indians (takes 2 min max, big data bootstrap)')
+    print('\nDataset: pima indians')
     tree_pred_b(x=pima_indians[:, :8],
                 tr=tree_grow_b(x=pima_indians[:, :8],
                                y=pima_indians[:, 8],
