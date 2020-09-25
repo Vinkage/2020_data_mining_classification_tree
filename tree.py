@@ -1,7 +1,9 @@
 import numpy as np
 import cProfile
 import pstats
+# import tqdm
 
+# from tqdm import trange
 from pstats import SortKey
 from sklearn import metrics
 
@@ -57,9 +59,7 @@ class Node:
         """
         self.col = None
         # This weird numpy line gives the majority vote, which is 1 or 0
-        self.split_value_or_rows = np.argmax(
-            np.bincount(node_classes.astype(int)))
-
+        self.split_value_or_rows = major_vote(node_classes)
 
 class Tree:
     """
@@ -131,6 +131,11 @@ class Tree:
     #     tree_string = depth * ' ' + str(int(self.tree.split_value_or_rows)) + tree_string
     #     return tree_string
 
+def major_vote(classes):
+    """
+    @todo: Docstring for major_vote(classes
+    """
+    return np.argmax(np.bincount(classes.astype(int)))
 
 def impurity(array) -> int:
     """
@@ -302,7 +307,13 @@ def tree_grow_b(x=None,
                 nfeat=None,
                 m=None,
                 **defaults) -> Tree:
-    pass
+    forest = []
+    for i in range(m):# ,desc=f'planting a forest, growing {m} trees'):
+        choice = np.random.randint(len(x),size=len(x))
+        x_bag, y_bag = x[choice], y[choice]
+        forest.append(tree_grow(x=x_bag,y=y_bag,nmin=nmin,minleaf=minleaf,nfeat=nfeat))
+    return forest
+
 
 
 def tree_pred(x=None, tr=None, training=None, **defaults) -> np.array:
@@ -323,8 +334,29 @@ def tree_pred(x=None, tr=None, training=None, **defaults) -> np.array:
         print(f'\t->Recall:\n\t\t{metrics.recall_score(y, training)}')
     return y
 
+
 def tree_pred_b(x=None, tr=None, training=None, **defaults) -> np.array:
-    pass
+    y_bag = np.zeros((len(x), len(tr)))
+    for i, tree in enumerate(tr):   # , total=len(tr),desc=f'making also {len(tr)} predictions!'):
+        y_bag[:,i] = tree.predict(x).astype(float)
+    nmin, minleaf, nfeat = tr[0].hyper_params
+    y = np.array([major_vote(y_bag[i]) for i in range(len(y_bag))])
+    if training is not None:
+        # print(np.mean(training == y))
+        if nfeat == x.shape[1]:
+            print(
+                f'Results from: prediction bagged tree({nmin=}, {minleaf=}, {nfeat=})'
+            )
+        else:
+            print(
+                f'Results from: prediction random forest tree({nmin=}, {minleaf=}, {nfeat=})'
+            )
+        print(
+            f'\t->Confusion matrix:\n{metrics.confusion_matrix(y, training)}')
+        print(f'\t->Accuracy:\n\t\t{metrics.accuracy_score(y, training)}')
+        print(f'\t->Precission:\n\t\t{metrics.precision_score(y, training)}')
+        print(f'\t->Recall:\n\t\t{metrics.recall_score(y, training)}')
+    return y
 
 
 if __name__ == '__main__':
@@ -345,6 +377,16 @@ if __name__ == '__main__':
                            nfeat=5),
               training=credit_data[:, 5])
 
+    print("Dataset: credit data")
+    tree_pred_b(x=credit_data[:, :5],
+                tr=tree_grow_b(x=credit_data[:, 0:5],
+                               y=credit_data[:, 5],
+                               nmin=2,
+                               minleaf=1,
+                               nfeat=4,
+                               m=50),
+                training=credit_data[:, 5])
+
     print('\nDataset: pima indians')
     tree_pred(x=pima_indians[:, :8],
               tr=tree_grow(x=pima_indians[:, :8],
@@ -354,6 +396,19 @@ if __name__ == '__main__':
                            nfeat=pima_indians.shape[1] - 1),
               training=pima_indians[:, 8])
 
+
+    print('\nDataset: pima indians (takes 2 min max, big data bootstrap)')
+    tree_pred_b(x=pima_indians[:, :8],
+                tr=tree_grow_b(x=pima_indians[:, :8],
+                               y=pima_indians[:, 8],
+                               nmin=20,
+                               minleaf=5,
+                               nfeat=4,
+                               m=5),
+                training=pima_indians[:, 8])
+
+    
+
     # Time profiles: see what functions take what time! :)
 
     # print("prediction metrics single tree pima indians:")
@@ -362,7 +417,7 @@ if __name__ == '__main__':
     # Time profile of pima indians data prediction with single tree
     # print("prediction metrics single tree pima indians:")
     # cProfile.run(
-    #     "tree_pred(x=pima_indians[:,:8], tr=tree_grow(x=pima_indians[:,:8], y=pima_indians[:,8], nmin=20, minleaf=5, nfeat=pima_indians.shape[1]-1), training=pima_indians[:,8])",
+    #     "tree_pred_b(x=pima_indians[:, :8], tr=tree_grow_b(x=pima_indians[:, :8], y=pima_indians[:, 8], nmin=20, minleaf=5, nfeat=pima_indians.shape[1] - 1, m=50), training=pima_indians[:, 8])",
     #     'restats')
 
     # p = pstats.Stats('restats')
