@@ -1,10 +1,10 @@
 import numpy as np
-# import cProfile
-# import pstats
+import cProfile
+import pstats
 # import tqdm
 
 # from tqdm import trange
-# from pstats import SortKey
+from pstats import SortKey
 from sklearn import metrics
 
 # age,married,house,income,gender,class
@@ -368,44 +368,44 @@ if __name__ == '__main__':
                                  delimiter=',',
                                  skip_header=True)
 
-    print("\nDataset: credit data")
-    tree_pred(x=credit_data[:, :5],
-              tr=tree_grow(x=credit_data[:, 0:5],
-                           y=credit_data[:, 5],
-                           nmin=2,
-                           minleaf=1,
-                           nfeat=5),
-              training=credit_data[:, 5])
+    # print("\nDataset: credit data")
+    # tree_pred(x=credit_data[:, :5],
+    #           tr=tree_grow(x=credit_data[:, 0:5],
+    #                        y=credit_data[:, 5],
+    #                        nmin=2,
+    #                        minleaf=1,
+    #                        nfeat=5),
+    #           training=credit_data[:, 5])
 
-    print("\nDataset: credit data")
-    tree_pred_b(x=credit_data[:, :5],
-                tr=tree_grow_b(x=credit_data[:, 0:5],
-                               y=credit_data[:, 5],
-                               nmin=2,
-                               minleaf=1,
-                               nfeat=4,
-                               m=50),
-                training=credit_data[:, 5])
+    # print("\nDataset: credit data")
+    # tree_pred_b(x=credit_data[:, :5],
+    #             tr=tree_grow_b(x=credit_data[:, 0:5],
+    #                            y=credit_data[:, 5],
+    #                            nmin=2,
+    #                            minleaf=1,
+    #                            nfeat=4,
+    #                            m=50),
+    #             training=credit_data[:, 5])
 
-    print('\nDataset: pima indians')
-    tree_pred(x=pima_indians[:, :8],
-              tr=tree_grow(x=pima_indians[:, :8],
-                           y=pima_indians[:, 8],
-                           nmin=20,
-                           minleaf=5,
-                           nfeat=pima_indians.shape[1] - 1),
-              training=pima_indians[:, 8])
+    # print('\nDataset: pima indians')
+    # tree_pred(x=pima_indians[:, :8],
+    #           tr=tree_grow(x=pima_indians[:, :8],
+    #                        y=pima_indians[:, 8],
+    #                        nmin=20,
+    #                        minleaf=5,
+    #                        nfeat=pima_indians.shape[1] - 1),
+    #           training=pima_indians[:, 8])
 
 
-    print('\nDataset: pima indians')
-    tree_pred_b(x=pima_indians[:, :8],
-                tr=tree_grow_b(x=pima_indians[:, :8],
-                               y=pima_indians[:, 8],
-                               nmin=20,
-                               minleaf=5,
-                               nfeat=4,
-                               m=5),
-                training=pima_indians[:, 8])
+    # print('\nDataset: pima indians')
+    # tree_pred_b(x=pima_indians[:, :8],
+    #             tr=tree_grow_b(x=pima_indians[:, :8],
+    #                            y=pima_indians[:, 8],
+    #                            nmin=20,
+    #                            minleaf=5,
+    #                            nfeat=4,
+    #                            m=5),
+    #             training=pima_indians[:, 8])
 
     
 
@@ -416,10 +416,10 @@ if __name__ == '__main__':
 
     # Time profile of pima indians data prediction with single tree
     # print("prediction metrics single tree pima indians:")
-    # cProfile.run(
-    #     "tree_pred_b(x=pima_indians[:, :8], tr=tree_grow_b(x=pima_indians[:, :8], y=pima_indians[:, 8], nmin=20, minleaf=5, nfeat=4, m=5), training=pima_indians[:, 8])",
-    #     'restats')
+    cProfile.run(
+        "tree_pred_b(x=pima_indians[:, :8], tr=tree_grow_b(x=pima_indians[:, :8], y=pima_indians[:, 8], nmin=20, minleaf=5, nfeat=4, m=5), training=pima_indians[:, 8])",
+        'restats')
 
-    # p = pstats.Stats('restats')
-    # p.sort_stats(SortKey.TIME)
-    # p.print_stats()
+    p = pstats.Stats('restats')
+    p.sort_stats(SortKey.TIME)
+    p.print_stats()
