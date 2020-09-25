@@ -198,7 +198,7 @@ def bestsplit(x, y, minleaf) -> None:
         delta_i = (impurity(classes_left) * len(classes_left) +
                    impurity(classes_right) * len(classes_right))
         # stop huidige splits in de lijst om best split te berekenen
-        best_list.append((delta_i, mask_left, mask_right, split_value))
+        np.append(best_list, (delta_i, mask_left, mask_right, split_value))
         # Haal de huidige split_point uit split_points
         split_points = split_points[:-1]
 
