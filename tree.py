@@ -20,6 +20,8 @@ plt.rc('figure', figsize=(12, 5))
 # from tqdm import trange
 from pstats import SortKey
 from sklearn import metrics
+from mlxtend.evaluate import mcnemar
+from mlxtend.evaluate import mcnemar_table
 # -
 
 # age,married,house,income,gender,class
@@ -382,48 +384,6 @@ def tree_pred_b(x=None, tr=None, training=None, **defaults) -> np.array:
     return y
 
 
-# def triple_mcnemar(x=None,
-#                    y=None,
-#                    predictions=[
-#                        tree_pred(x=pima_indians[:, :8],
-#                                  tr=tree_grow(x=pima_indians[:, :8],
-#                                               y=pima_indians[:, 8],
-#                                               nmin=20,
-#                                               minleaf=5,
-#                                               nfeat=pima_indians.shape[1] - 1),
-#                                  training=pima_indians[:, 8]),
-#                        tree_pred_b(x=pima_indians[:, :8],
-#                                    tr=tree_grow_b(x=pima_indians[:, :8],
-#                                                   y=pima_indians[:, 8],
-#                                                   nmin=20,
-#                                                   minleaf=5,
-#                                                   nfeat=4,
-#                                                   m=5),
-#                                    training=pima_indians[:, 8]),
-#                        tree_pred_b(x=pima_indians[:, :8],
-#                                    tr=tree_grow_b(x=pima_indians[:, :8],
-#                                                   y=pima_indians[:, 8],
-#                                                   nmin=20,
-#                                                   minleaf=5,
-#                                                   nfeat=pima_indians.shape[1] -
-#                                                   1,
-#                                                   m=5),
-#                                    training=pima_indians[:, 8])
-#                    ]):
-#     """
-#     @todo: Docstring for significance_t_test(x
-#     """
-# fig, axes = plt.subplots(nrows=1, ncols=3)
-
-# sns.set_theme(style='whitegrid')
-
-# sns.histplot(y=, ax=ax)
-# ax.set(xlabel='binary labels of y', ylabel='Rel. freq.', title='relative frequency zeroes or ones')
-# ax.grid()
-
-# fig.savefig("plots/significance_test.png")
-
-
 def report_load_data_describe_balance():
     # Training data
     # +
@@ -746,7 +706,7 @@ def confusion_matrix(y_test, yhat_single_tree, yhat_bagging,
     rf = matrices[2]
 
     sns.set_theme(style='whitegrid')
-    single.tick_params(labelbottom=False,labeltop=True, length=0.5)
+    single.tick_params(labelbottom=False, labeltop=True, length=0.5)
     sns.heatmap(data=df_single_confusion,
                 cbar=True,
                 ax=single,
@@ -756,7 +716,7 @@ def confusion_matrix(y_test, yhat_single_tree, yhat_bagging,
                 cmap="YlGnBu")
     single.set(title='Test', ylabel='Single tree')
 
-    bag.tick_params(labelbottom=False,labeltop=True, length=0.5)
+    bag.tick_params(labelbottom=False, labeltop=True, length=0.5)
     sns.heatmap(data=df_bag,
                 cbar=True,
                 ax=bag,
@@ -766,7 +726,7 @@ def confusion_matrix(y_test, yhat_single_tree, yhat_bagging,
                 cmap="YlGnBu")
     bag.set(title='Test', ylabel='Bagged trees')
 
-    rf.tick_params(labelbottom=False,labeltop=True, length=0.5)
+    rf.tick_params(labelbottom=False, labeltop=True, length=0.5)
     sns.heatmap(data=df_rf,
                 cbar=True,
                 ax=rf,
@@ -778,22 +738,92 @@ def confusion_matrix(y_test, yhat_single_tree, yhat_bagging,
 
     from matplotlib.ticker import PercentFormatter
     cbar = single.collections[0].colorbar
-    cbar.set_ticks(sorted([i[j] for i in single_confusion.tolist() for j in range(len(i))]))
-    cbar.ax.tick_params(labelsize=10, length=0.5) 
+    cbar.set_ticks(
+        sorted(
+            [i[j] for i in single_confusion.tolist() for j in range(len(i))]))
+    cbar.ax.tick_params(labelsize=10, length=0.5)
     cbar.ax.yaxis.set_major_formatter(PercentFormatter(len(y_test), 0))
 
     cbar = bag.collections[0].colorbar
-    cbar.set_ticks(sorted([i[j] for i in bag_confusion.tolist() for j in range(len(i))]))
-    cbar.ax.tick_params(labelsize=10, length=0.5) 
+    cbar.set_ticks(
+        sorted([i[j] for i in bag_confusion.tolist() for j in range(len(i))]))
+    cbar.ax.tick_params(labelsize=10, length=0.5)
     cbar.ax.yaxis.set_major_formatter(PercentFormatter(len(y_test), 0))
 
     cbar = rf.collections[0].colorbar
-    cbar.set_ticks(sorted([i[j] for i in rf_confusion.tolist() for j in range(len(i))]))
-    cbar.ax.tick_params(labelsize=10, length=0.5) 
+    cbar.set_ticks(
+        sorted([i[j] for i in rf_confusion.tolist() for j in range(len(i))]))
+    cbar.ax.tick_params(labelsize=10, length=0.5)
     cbar.ax.yaxis.set_major_formatter(PercentFormatter(len(y_test), 0))
 
     fig.savefig("./plots/cm.png", dpi=300, bbox_inches='tight')
     # -
+    # +
+    with open('./latex/metrics.tex', 'w') as metrics_table:
+        table = f"\
+\\begin{{table*}}\\centering\n\
+\\ra{{1.3}}\n\
+\\begin{{tabular}}{{@{{}}rrrr@{{}}}}\\toprule\n\
+& Single tree & Bagged trees & Random forest\\\\\\midrule\n\
+Metrics\\\\\n\
+\\cmidrule{{1-1}} Accuracy & {metrics.accuracy_score(yhat_single_tree, y_test):.3f} & {metrics.accuracy_score(yhat_bagging, y_test):.3f} & {metrics.accuracy_score(yhat_random_forest, y_test):.3f}\\\\\n\
+Precision & {metrics.precision_score(yhat_single_tree, y_test):.3f} & {metrics.precision_score(yhat_bagging, y_test):.3f} & {metrics.precision_score(yhat_random_forest, y_test):.3f}\\\\\n\
+Recall & {metrics.recall_score(yhat_single_tree, y_test):.3f} & {metrics.recall_score(yhat_bagging, y_test):.3f}& {metrics.recall_score(yhat_random_forest, y_test):.3f}\\\\  \\bottomrule\n\
+\end{{tabular}}\n\
+\\caption{{Caption}}\n\
+\end{{table*}}\n\
+"
+
+        metrics_table.write(table)
+    # -
+
+
+# +
+def report_significance(y_test=None,
+                        yhat_single_tree=None,
+                        yhat_bagging=None,
+                        yhat_random_forest=None):
+    """
+    @todo: Docstring for report_significance(y_test=None, yhat_single_tree=None, yhat_bagging=None, yhat_random_forest=None
+    """
+    # +
+    tb_single_bag = mcnemar_table(y_target=y_test, 
+                   y_model1=yhat_single_tree, 
+                   y_model2=yhat_bagging)
+    tb_single_rf = mcnemar_table(y_target=y_test, 
+                   y_model1=yhat_single_tree, 
+                   y_model2=yhat_random_forest)
+    tb_bag_rf = mcnemar_table(y_target=y_test, 
+                   y_model1=yhat_bagging, 
+                   y_model2=yhat_random_forest)
+    # -
+    # chi2, p = mcnemar(ary=tb_b, corrected=True)
+# print('chi-squared:', chi2)
+# print('p-value:', p)
+    # +
+    chi2_single_bag, p_single_bag = mcnemar(ary=tb_single_bag, corrected=True)
+    chi2_single_rf, p_single_rf = mcnemar(ary=tb_single_rf, corrected=True)
+    chi2_bag_rf, p_bag_rf = mcnemar(ary=tb_bag_rf, corrected=True)
+    # -
+    # +
+    with open('./latex/significance.tex', 'w') as metrics_table:
+        table = f"\
+\\begin{{table*}}\\centering\n\
+\\ra{{1.3}}\n\
+\\begin{{tabular}}{{@{{}}rrrr@{{}}}}\\toprule\n\
+& single vs bagging & single vs random forest & bagging vs random forest\\\\\\midrule\n\
+mcnemar values\\\\\n\
+\\cmidrule{{1-1}} $\chi^2$ & {chi2_single_bag:.3f} & {chi2_single_rf:.3f} & {chi2_bag_rf:.3f}\\\\\n\
+p-value & {p_single_bag:.2E} & {p_single_rf:.2E} & {p_bag_rf:.3f}\\\\\n\
+\\bottomrule\n\
+\end{{tabular}}\n\
+\\caption{{caption}}\n\
+\end{{table*}}\n\
+"
+        metrics_table.write(table)
+    # -
+
+# -
 
 
 def report():
@@ -817,11 +847,17 @@ def report():
         single_tree=single_tree,
         bagging=bagging,
         random_forest=random_forest)
+
     confusion_matrix(y_test, yhat_single_tree, yhat_bagging,
                      yhat_random_forest)
 
     # 1. Calculates the mcnemar X2 value and plots the single degree of freedom X2 plot
-    report_significance()
+    # +
+    report_significance(y_test=y_test,
+                        yhat_single_tree=yhat_single_tree,
+                        yhat_bagging=yhat_bagging,
+                        yhat_random_forest=yhat_random_forest)
+    # -
     pass
 
 
