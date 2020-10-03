@@ -1,11 +1,26 @@
+# +
 import numpy as np
+import sklearn
 import cProfile
+import pandas as pd
 import pstats
+from scipy import stats
+import matplotlib.pyplot as plt
+import seaborn as sns
+# %matplotlib inline
+plt.style.use('seaborn-whitegrid')
+plt.rc('text', usetex=True)
+plt.rc('font', family='times')
+plt.rc('xtick', labelsize=10)
+plt.rc('ytick', labelsize=10)
+plt.rc('font', size=12)
+plt.rc('figure', figsize=(12, 5))
 # import tqdm
 
 # from tqdm import trange
 from pstats import SortKey
 from sklearn import metrics
+# -
 
 # age,married,house,income,gender,class
 # [(22, 0, 0, 28, 1, 0)
@@ -60,6 +75,7 @@ class Node:
         self.col = None
         # This weird numpy line gives the majority vote, which is 1 or 0
         self.split_value_or_rows = major_vote(node_classes)
+
 
 class Tree:
     """
@@ -130,11 +146,13 @@ class Tree:
     #     tree_string = depth * ' ' + str(int(self.tree.split_value_or_rows)) + tree_string
     #     return tree_string
 
+
 def major_vote(classes):
     """
     @todo: Docstring for major_vote(classes
     """
     return np.argmax(np.bincount(classes.astype(int)))
+
 
 def impurity(array) -> int:
     """
@@ -307,12 +325,16 @@ def tree_grow_b(x=None,
                 m=None,
                 **defaults) -> Tree:
     forest = []
-    for i in range(m):# ,desc=f'planting a forest, growing {m} trees'):
-        choice = np.random.randint(len(x),size=len(x))
+    for i in range(m):  # ,desc=f'planting a forest, growing {m} trees'):
+        choice = np.random.randint(len(x), size=len(x))
         x_bag, y_bag = x[choice], y[choice]
-        forest.append(tree_grow(x=x_bag,y=y_bag,nmin=nmin,minleaf=minleaf,nfeat=nfeat))
+        forest.append(
+            tree_grow(x=x_bag,
+                      y=y_bag,
+                      nmin=nmin,
+                      minleaf=minleaf,
+                      nfeat=nfeat))
     return forest
-
 
 
 def tree_pred(x=None, tr=None, training=None, **defaults) -> np.array:
@@ -336,8 +358,10 @@ def tree_pred(x=None, tr=None, training=None, **defaults) -> np.array:
 
 def tree_pred_b(x=None, tr=None, training=None, **defaults) -> np.array:
     y_bag = np.zeros((len(x), len(tr)))
-    for i, tree in enumerate(tr):   # , total=len(tr),desc=f'making also {len(tr)} predictions!'):
-        y_bag[:,i] = tree.predict(x).astype(float)
+    for i, tree in enumerate(
+            tr
+    ):  # , total=len(tr),desc=f'making also {len(tr)} predictions!'):
+        y_bag[:, i] = tree.predict(x).astype(float)
     nmin, minleaf, nfeat = tr[0].hyper_params
     y = np.array([major_vote(y_bag[i]) for i in range(len(y_bag))])
     if training is not None:
@@ -358,14 +382,457 @@ def tree_pred_b(x=None, tr=None, training=None, **defaults) -> np.array:
     return y
 
 
-if __name__ == '__main__':
-    credit_data = np.genfromtxt('./data/credit_score.txt',
-                                delimiter=',',
-                                skip_header=True)
+# def triple_mcnemar(x=None,
+#                    y=None,
+#                    predictions=[
+#                        tree_pred(x=pima_indians[:, :8],
+#                                  tr=tree_grow(x=pima_indians[:, :8],
+#                                               y=pima_indians[:, 8],
+#                                               nmin=20,
+#                                               minleaf=5,
+#                                               nfeat=pima_indians.shape[1] - 1),
+#                                  training=pima_indians[:, 8]),
+#                        tree_pred_b(x=pima_indians[:, :8],
+#                                    tr=tree_grow_b(x=pima_indians[:, :8],
+#                                                   y=pima_indians[:, 8],
+#                                                   nmin=20,
+#                                                   minleaf=5,
+#                                                   nfeat=4,
+#                                                   m=5),
+#                                    training=pima_indians[:, 8]),
+#                        tree_pred_b(x=pima_indians[:, :8],
+#                                    tr=tree_grow_b(x=pima_indians[:, :8],
+#                                                   y=pima_indians[:, 8],
+#                                                   nmin=20,
+#                                                   minleaf=5,
+#                                                   nfeat=pima_indians.shape[1] -
+#                                                   1,
+#                                                   m=5),
+#                                    training=pima_indians[:, 8])
+#                    ]):
+#     """
+#     @todo: Docstring for significance_t_test(x
+#     """
+# fig, axes = plt.subplots(nrows=1, ncols=3)
 
-    pima_indians = np.genfromtxt('./data/pima_indians.csv',
-                                 delimiter=',',
-                                 skip_header=True)
+# sns.set_theme(style='whitegrid')
+
+# sns.histplot(y=, ax=ax)
+# ax.set(xlabel='binary labels of y', ylabel='Rel. freq.', title='relative frequency zeroes or ones')
+# ax.grid()
+
+# fig.savefig("plots/significance_test.png")
+
+
+def report_load_data_describe_balance():
+    # Training data
+    # +
+    eclipse2 = pd.read_csv(
+        './data/part2_bug_detection_article/eclipse-metrics-packages-2.0.csv',
+        sep=';')
+    df = pd.DataFrame(eclipse2)
+    df_x_train = df[df.columns[4:44]]
+    df_x_train['pre'] = df['pre']
+    df_y_train = df['post']
+    (df_y_train.values != 0).sum()
+    len(df_y_train) - (df_y_train.values != 0).sum()
+    df_y_train = df_y_train.apply(lambda x: 1 if x != 0 else 0)
+    df_y_train.value_counts()
+    x_train = df_x_train.to_numpy()
+    y_train = df_y_train.to_numpy()
+    print("Shape of training predictors:", x_train.shape,
+          "\nShape of training target:", y_train.shape)
+    # -
+
+    # Test data
+    # +
+    eclipse3 = pd.read_csv(
+        './data/part2_bug_detection_article/eclipse-metrics-packages-3.0.csv',
+        sep=';')
+    df = pd.DataFrame(eclipse3)
+    df_x_test = df[df.columns[4:44]]
+    df_x_test['pre'] = df['pre']
+    df_y_test = df['post']
+    (df_y_test.values != 0).sum()
+    len(df_y_test) - (df_y_test.values != 0).sum()
+    df_y_test = df_y_test.apply(lambda x: 1 if x != 0 else 0)
+    df_y_test.value_counts()
+    x_test = df_x_test.to_numpy()
+    y_test = df_y_test.to_numpy()
+    print("Shape of testing predictors:", x_train.shape,
+          "\nShape of testing target:", y_train.shape)
+    # -
+
+    # Balance plot
+    # +
+    fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(12.0, 6.0))
+    ax_train = axes[0]
+    ax_test = axes[1]
+
+    sns.set_theme(style='whitegrid')
+    ax_train.set(
+        title='Post release bugs presence in training data (\%, shape = ' +
+        str(y_train.shape) + ')')
+    ax_train.pie(np.c_[np.sum(np.where(y_train == 1)),
+                       np.sum(np.where(y_train == 0))][0],
+                 labels=['present', 'absent'],
+                 colors=['g', 'r'],
+                 shadow=False,
+                 autopct='%.2f')
+    ax_test.set(title='Post release bugs presence in test data (\%, shape = ' +
+                str(y_test.shape) + ')')
+    ax_test.pie(np.c_[np.sum(np.where(y_test == 1)),
+                      np.sum(np.where(y_test == 0))][0],
+                labels=['present', 'absent'],
+                colors=['g', 'r'],
+                shadow=False,
+                autopct='%.2f')
+    fig.savefig("./plots/pies.png", dpi=300, bbox_inches='tight')
+    # -
+    return df_x_test, x_train, y_train, x_test, y_test
+
+
+def report_growing(X_train=None, y_train=None, feature_names=None):
+    """
+    @todo: Docstring for report_growing(
+    """
+    single_tree = tree_grow(x=X_train, y=y_train, nmin=15, minleaf=5, nfeat=41)
+
+    bagging = tree_grow_b(x=X_train,
+                          y=y_train,
+                          nmin=15,
+                          minleaf=5,
+                          nfeat=41,
+                          m=100)
+
+    random_forest = tree_grow_b(x=X_train,
+                                y=y_train,
+                                nmin=15,
+                                minleaf=5,
+                                nfeat=6,
+                                m=100)
+
+    # Single tree plot (root split, and left or right child) plot
+    # +
+    root = single_tree.tree
+    root_split = root.split_value_or_rows
+    root_feature = root.col
+    root_left, root_right = y_train[
+        X_train[:, root_feature] > root_split], y_train[
+            X_train[:, root_feature] <= root_split]
+    df_root_left = pd.DataFrame(data=root_left, columns=['left'])
+    df_root_right = pd.DataFrame(data=root_right, columns=['right'])
+    df_root_left.value_counts()
+    df_root_right.value_counts()
+    root_feature_name = feature_names[root_feature]
+    df_root = pd.DataFrame(
+        data={
+            'split': [
+                str(root_feature_name) + ' $>$ ' + str(root_split),
+                str(root_feature_name) + ' $\leq$ ' + str(root_split)
+            ] * 2,
+            'label': ['present'] * 2 + ['absent'] * 2,
+            'value': [
+                df_root_left.value_counts().values[0],
+                df_root_right.value_counts().values[1],
+                df_root_left.value_counts().values[1],
+                df_root_right.value_counts().values[0],
+            ]
+        })
+    df_root
+    # -
+
+    # node.is_leaf_node(node_classes)
+    # +
+    len(root_left)
+    np.sum(root_left)
+    left = root.left
+    left_split = left.split_value_or_rows
+    left_feature = left.col
+    left_left, left_right = root_left[X_train[(
+        X_train[:, root_feature] > root_split
+    )][:, left_feature] > left_split], root_left[X_train[(
+        X_train[:, root_feature] > root_split)][:, left_feature] <= left_split]
+    df_left_left = pd.DataFrame(data=left_left, columns=['left'])
+    df_left_right = pd.DataFrame(data=left_right, columns=['right'])
+    df_left_left.value_counts()
+    df_left_right.value_counts()
+    left_feature_name = feature_names[left_feature]
+    df_left = pd.DataFrame(
+        data={
+            'split': [
+                str(left_feature_name).replace('_', ' ') + ' $>$ ' +
+                '{:.3f}'.format(left_split),
+                str(left_feature_name).replace('_', ' ') + ' $\leq$ ' +
+                '{:.3f}'.format(left_split)
+            ] * 2,
+            'label': ['present'] * 2 + ['absent'] * 2,
+            'value': [
+                df_left_left.value_counts().values[0],
+                df_left_right.value_counts().values[0],
+                df_left_left.value_counts().values[1],
+                df_left_right.value_counts().values[1],
+            ]
+        })
+    df_left
+    # -
+    # node.is_leaf_node(node_classes)
+    # +
+    len(root_right)
+    np.sum(root_right)
+    len(root_right) - np.sum(root_right)
+    right = root.right
+    right_split = left.split_value_or_rows
+    right_feature = left.col
+    right_left, right_right = root_right[X_train[(
+        X_train[:, root_feature] <= root_split
+    )][:, right_feature] > right_split], root_right[X_train[(
+        X_train[:, root_feature] <= root_split)][:,
+                                                 right_feature] <= right_split]
+    df_right_left = pd.DataFrame(data=right_left, columns=['left'])
+    df_right_right = pd.DataFrame(data=right_right, columns=['right'])
+    df_right_left.value_counts()
+    df_right_right.value_counts()
+    right_feature_name = feature_names[right_feature]
+    df_right = pd.DataFrame(
+        data={
+            'split': [
+                str(right_feature_name).replace('_', ' ') + ' $>$ ' +
+                '{:.1f}'.format(right_split),
+                str(right_feature_name).replace('_', ' ') + ' $\leq$ ' +
+                '{:.1f}'.format(right_split)
+            ] * 2,
+            'label': ['present'] * 2 + ['absent'] * 2,
+            'value': [
+                df_right_left.value_counts().values[0],
+                df_right_right.value_counts().values[1],
+                df_right_left.value_counts().values[1],
+                df_right_right.value_counts().values[0],
+            ]
+        })
+    df_right
+    # -
+
+    # +
+    fig, root_ax = plt.subplots(nrows=1, ncols=1, figsize=(3.0, 3.0))
+
+    sns.set_theme(style='whitegrid')
+    # ax_train.set(
+    #     title='Post release bugs presence in training data (\%, shape = ' +
+    #     str(y_train.shape) + ')')
+    sns.barplot(x='split',
+                y='value',
+                hue="label",
+                data=df_root,
+                ax=root_ax,
+                palette=['g', 'r'])
+
+    fig.savefig("./plots/simple_tree_root.svg", dpi=300)
+    # -
+
+    # +
+    fig, left_ax = plt.subplots(nrows=1, ncols=1, figsize=(3.0, 3.0))
+
+    sns.set_theme(style='whitegrid')
+    # ax_train.set(
+    #     title='Post release bugs presence in training data (\%, shape = ' +
+    #     str(y_train.shape) + ')')
+    sns.barplot(x='split',
+                y='value',
+                hue="label",
+                data=df_left,
+                ax=left_ax,
+                palette=['g', 'r'])
+
+    fig.savefig("./plots/simple_tree_left.svg", dpi=300)
+    # -
+    # +
+    fig, right_ax = plt.subplots(nrows=1, ncols=1, figsize=(3.0, 3.0))
+
+    sns.set_theme(style='whitegrid')
+    # ax_train.set(
+    #     title='Post release bugs presence in training data (\%, shape = ' +
+    #     str(y_train.shape) + ')')
+    sns.barplot(x='split',
+                y='value',
+                hue="label",
+                data=df_right,
+                ax=right_ax,
+                palette=['g', 'r'])
+
+    fig.savefig("./plots/simple_tree_right.svg", dpi=300)
+    # -
+
+    # Leaf left plot
+    # +
+    fig, leaf = plt.subplots(nrows=1, ncols=1, figsize=(3.0, 3.0))
+
+    sns.set_theme(style='whitegrid')
+    leaf.set(title='Leaf node majority ' + str())
+    leaf.pie(np.c_[np.sum(np.where(root_left == 1)),
+                   np.sum(np.where(root_left == 0))][0],
+             labels=['present', 'absent'],
+             colors=['g', 'r'],
+             shadow=False,
+             autopct='%.2f')
+    fig.savefig("./plots/leaf_left.svg", dpi=300, bbox_inches='tight')
+    # -
+    # Leafs right plot
+    # +
+    fig, leafs = plt.subplots(nrows=1, ncols=2, figsize=(6.0, 3.0))
+    leaf_left = leafs[0]
+    leaf_right = leafs[1]
+
+    sns.set_theme(style='whitegrid')
+    leaf_right.set(title='Leaf node majorities')
+    leaf_left.pie(np.c_[np.sum(np.where(right_left == 1)),
+                        np.sum(np.where(right_left == 0))][0],
+                  labels=['present', 'absent'],
+                  colors=['g', 'r'],
+                  shadow=False,
+                  autopct='%.2f')
+    leaf_right.pie(np.c_[np.sum(np.where(right_right == 1)),
+                         np.sum(np.where(right_right == 0))][0],
+                   labels=['present', 'absent'],
+                   colors=['g', 'r'],
+                   shadow=False,
+                   autopct='%.2f')
+    fig.savefig("./plots/leafs_right.svg", dpi=300, bbox_inches='tight')
+    # -
+    return single_tree, bagging, random_forest
+
+
+def report_predictions(X_test=None,
+                       y_test=None,
+                       single_tree=None,
+                       bagging=None,
+                       random_forest=None):
+    """
+    @todo: Docstring for report_predictions(X_test=None, y_test=None, single_tree=None, bagging=None, random_forest=None)
+    """
+    if single_tree is not None:
+        yhat_single_tree = tree_pred(x=X_test, tr=single_tree, training=y_test)
+    if bagging is not None:
+        yhat_bagging = tree_pred_b(x=X_test, tr=bagging, training=y_test)
+    if random_forest is not None:
+        yhat_random_forest = tree_pred_b(x=X_test,
+                                         tr=random_forest,
+                                         training=y_test)
+    return yhat_single_tree, yhat_bagging, yhat_random_forest
+
+
+def confusion_matrix(y_test, yhat_single_tree, yhat_bagging,
+                     yhat_random_forest):
+    """
+    @todo: Docstring for confusion_matrix(
+    """
+    single_confusion = metrics.confusion_matrix(yhat_single_tree, y_test)
+    bag_confusion = metrics.confusion_matrix(yhat_bagging, y_test)
+    rf_confusion = metrics.confusion_matrix(yhat_random_forest, y_test)
+    df_single_confusion = pd.DataFrame(data=single_confusion,
+                                       columns=['N', 'P'],
+                                       index=['N', 'P'])
+    df_bag = pd.DataFrame(data=bag_confusion,
+                          columns=['N', 'P'],
+                          index=['N', 'P'])
+    df_rf = pd.DataFrame(data=rf_confusion,
+                         columns=['N', 'P'],
+                         index=['N', 'P'])
+    # Confusion matrices using seaborn
+    # +
+    fig, matrices = plt.subplots(nrows=1, ncols=3, figsize=(12.0, 3.0))
+    single = matrices[0]
+    bag = matrices[1]
+    rf = matrices[2]
+
+    sns.set_theme(style='whitegrid')
+    single.tick_params(labelbottom=False,labeltop=True, length=0.5)
+    sns.heatmap(data=df_single_confusion,
+                cbar=True,
+                ax=single,
+                square=True,
+                annot=True,
+                fmt='d',
+                cmap="YlGnBu")
+    single.set(title='Test', ylabel='Single tree')
+
+    bag.tick_params(labelbottom=False,labeltop=True, length=0.5)
+    sns.heatmap(data=df_bag,
+                cbar=True,
+                ax=bag,
+                square=True,
+                annot=True,
+                fmt='d',
+                cmap="YlGnBu")
+    bag.set(title='Test', ylabel='Bagged trees')
+
+    rf.tick_params(labelbottom=False,labeltop=True, length=0.5)
+    sns.heatmap(data=df_rf,
+                cbar=True,
+                ax=rf,
+                square=True,
+                annot=True,
+                fmt='d',
+                cmap="YlGnBu")
+    rf.set(title='Test', ylabel='Random forest')
+
+    from matplotlib.ticker import PercentFormatter
+    cbar = single.collections[0].colorbar
+    cbar.set_ticks(sorted([i[j] for i in single_confusion.tolist() for j in range(len(i))]))
+    cbar.ax.tick_params(labelsize=10, length=0.5) 
+    cbar.ax.yaxis.set_major_formatter(PercentFormatter(len(y_test), 0))
+
+    cbar = bag.collections[0].colorbar
+    cbar.set_ticks(sorted([i[j] for i in bag_confusion.tolist() for j in range(len(i))]))
+    cbar.ax.tick_params(labelsize=10, length=0.5) 
+    cbar.ax.yaxis.set_major_formatter(PercentFormatter(len(y_test), 0))
+
+    cbar = rf.collections[0].colorbar
+    cbar.set_ticks(sorted([i[j] for i in rf_confusion.tolist() for j in range(len(i))]))
+    cbar.ax.tick_params(labelsize=10, length=0.5) 
+    cbar.ax.yaxis.set_major_formatter(PercentFormatter(len(y_test), 0))
+
+    fig.savefig("./plots/cm.png", dpi=300, bbox_inches='tight')
+    # -
+
+
+def report():
+    """
+    @todo: Docstring for report():
+    """
+
+    # +
+    # -
+    df_x_test, X_train, y_train, X_test, y_test = report_load_data_describe_balance(
+    )
+
+    # 1. Should save tree plot in './plots/single_tree_splits.png'
+    single_tree, bagging, random_forest = report_growing(
+        X_train=X_train, y_train=y_train, feature_names=df_x_test.columns)
+
+    # 1. Should write to a latex file the confusion matrices and quality measures
+    yhat_single_tree, yhat_bagging, yhat_random_forest = report_predictions(
+        X_test=X_test,
+        y_test=y_test,
+        single_tree=single_tree,
+        bagging=bagging,
+        random_forest=random_forest)
+    confusion_matrix(y_test, yhat_single_tree, yhat_bagging,
+                     yhat_random_forest)
+
+    # 1. Calculates the mcnemar X2 value and plots the single degree of freedom X2 plot
+    report_significance()
+    pass
+
+
+if __name__ == '__main__':
+    # credit_data = np.genfromtxt('./data/credit_score.txt',
+    #                             delimiter=',',
+    #                             skip_header=True)
+
+    # pima_indians = np.genfromtxt('./data/pima_indians.csv',
+    #                              delimiter=',',
+    #                              skip_header=True)
 
     # print("\nDataset: credit data")
     # tree_pred(x=credit_data[:, :5],
@@ -395,7 +862,6 @@ if __name__ == '__main__':
     #                        nfeat=pima_indians.shape[1] - 1),
     #           training=pima_indians[:, 8])
 
-
     # print('\nDataset: pima indians')
     # tree_pred_b(x=pima_indians[:, :8],
     #             tr=tree_grow_b(x=pima_indians[:, :8],
@@ -406,19 +872,30 @@ if __name__ == '__main__':
     #                            m=5),
     #             training=pima_indians[:, 8])
 
-    
+    # print('\nDataset: pima indians')
+    # tree_pred_b(x=pima_indians[:, :8],
+    #             tr=tree_grow_b(x=pima_indians[:, :8],
+    #                            y=pima_indians[:, 8],
+    #                            nmin=20,
+    #                            minleaf=5,
+    #                            nfeat=pima_indians.shape[1] - 1,
+    #                            m=5),
+    #             training=pima_indians[:, 8])
 
     # Time profiles: see what functions take what time! :)
 
     # print("prediction metrics single tree pima indians:")
     # cProfile.run("tree_pred(x=credit_data[:,:5], tr=tree_grow(x=credit_data[:,0:5], y=credit_data[:,5], nmin=2, minleaf=1, nfeat=5), dataset='credit score')", 'restats')
 
+    # triple_mcnemar(x=pima_indians[:, :8], y=pima_indians[:, 8])
+
     # Time profile of pima indians data prediction with single tree
     # print("prediction metrics single tree pima indians:")
-    cProfile.run(
-        "tree_pred_b(x=pima_indians[:, :8], tr=tree_grow_b(x=pima_indians[:, :8], y=pima_indians[:, 8], nmin=20, minleaf=5, nfeat=4, m=5), training=pima_indians[:, 8])",
-        'restats')
+    # cProfile.run(
+    #     "tree_pred_b(x=pima_indians[:, :8], tr=tree_grow_b(x=pima_indians[:, :8], y=pima_indians[:, 8], nmin=20, minleaf=5, nfeat=4, m=5), training=pima_indians[:, 8])",
+    #     'restats')
 
-    p = pstats.Stats('restats')
-    p.sort_stats(SortKey.TIME)
-    p.print_stats()
+    # p = pstats.Stats('restats')
+    # p.sort_stats(SortKey.TIME)
+    # p.print_stats()
+    report()
