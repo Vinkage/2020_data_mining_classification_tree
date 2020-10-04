@@ -1,29 +1,185 @@
+#- Names and student no.:
+
+# Hunter Sterk 123456789
+# Lonnie Bregman 123456789
+# Mike Vink 5585791
+
+#- Main functions:
+
+# def tree_grow(x,y,nmin,minleaf,nfeat):
+#     """
+#     /x/ numpy.ndarray, 2D numpy array containing data rows and feature columns
+#     /y/ numpy.ndarray, 1D numpy array containing binary x-row labels
+#     /nmin/ int, number of x-rows that a parent must contain before splitting
+#     /minleaf/ int, number of x-rows a child must have before splitting
+#     /nfeat/ int, number of x-columns randomly considered before splitting
+
+#       Returns -> Tree object
+
+#       tree_grow returns a tree object that stores a classification tree in a
+#     data structure that is similar to a linked list. To build
+#     the tree, it exhaustively considers the splits possible using nfeat
+#     random x-columns. The gini-index is used to determine the best split.
+#     Stopping rules constraining the number of x-rows in parent and child
+#     nodes are used as complexity parameters.
+
+#     EXAMPLE:
+#     >>> x
+#     array([[22.,  0.,  0., 28.,  1.],
+#            [46.,  0.,  1., 32.,  0.],
+#            [24.,  1.,  1., 24.,  1.],
+#            [25.,  0.,  0., 27.,  1.],
+#            [29.,  1.,  1., 32.,  0.],
+#            [45.,  1.,  1., 30.,  0.],
+#            [63.,  1.,  1., 58.,  1.],
+#            [36.,  1.,  0., 52.,  1.],
+#            [23.,  0.,  1., 40.,  0.],
+#            [50.,  1.,  1., 28.,  0.]])
+#     >>> y
+#     array([0., 0., 0., 0., 0., 1., 1., 1., 1., 1.])
+#     >>> tree_grow(x=x,y=y,nmin=2,minleaf=1,nfeat=5)
+#     <__main__.Tree object at 0x10d752ee0>
+
+#     """
+
+# def tree_pred(x,tr,true):
+#     """
+#     /x/ numpy.ndarray, 2D numpy array containing data rows and feature columns
+#     /tr/ Tree object, tree to predict a binary label for each row in x
+#     /true/ numpy.ndarray, 1D numpy array containing "true" labels
+#
+
+#       Returns -> numpy.ndarray, 1D numpy array containing predicted binary
+#                   labels for each row in x
+
+#       tree_pred uses a tree object to predict binary labels on a given 2D
+#     data array x. The "true" argument should only be given if predictions
+#     metrics are to be calculated and printed, which gives an immediate idea
+#     if the tree is erronous by seeing low prediction performance on the
+#     training data for example.
+
+#     EXAMPLE:
+#     >>> x
+#     array([[22.,  0.,  0., 28.,  1.],
+#            [46.,  0.,  1., 32.,  0.],
+#            [24.,  1.,  1., 24.,  1.],
+#            [25.,  0.,  0., 27.,  1.],
+#            [29.,  1.,  1., 32.,  0.],
+#            [45.,  1.,  1., 30.,  0.],
+#            [63.,  1.,  1., 58.,  1.],
+#            [36.,  1.,  0., 52.,  1.],
+#            [23.,  0.,  1., 40.,  0.],
+#            [50.,  1.,  1., 28.,  0.]])
+#     >>> tr = tree_grow(x=x,y=y,nmin=2,minleaf=1,nfeat=5)
+#     >>> tree_pred(x, tr)
+#     array([0., 0., 0., 0., 0., 1., 1., 1., 1., 1.])
+
+#     """
+
+# def tree_grow_b(x,y,nmin,minleaf,nfeat,m):
+#     """
+#     /x/ numpy.ndarray, 2D numpy array containing data rows and feature columns
+#     /y/ numpy.ndarray, 1D numpy array containing binary x-row labels
+#     /nmin/ int, number of x-rows that a parent must contain before splitting
+#     /minleaf/ int, number of x-rows a child must have before splitting
+#     /nfeat/ int, number of x-columns randomly considered before splitting
+#     /m/ int, number of bootstrap samples to draw
+
+#       Returns -> list of m Tree objects
+
+#       tree_grow_b returns a list of Tree objects that store a classification
+#     tree in a data structure that is similar to a linked list. To build the
+#     tree, it exhaustively considers the splits possible using nfeat random
+#     x-columns. In case of a random forest nfeat should be lower than the
+#     number of columns in x. The gini-index is used to determine the best
+#     split. Stopping rules constraining the number of x-rows in parent and
+#     child nodes are used as complexity parameters.
+
+#     EXAMPLE:
+#     >>> x
+#     array([[22.,  0.,  0., 28.,  1.],
+#            [46.,  0.,  1., 32.,  0.],
+#            [24.,  1.,  1., 24.,  1.],
+#            [25.,  0.,  0., 27.,  1.],
+#            [29.,  1.,  1., 32.,  0.],
+#            [45.,  1.,  1., 30.,  0.],
+#            [63.,  1.,  1., 58.,  1.],
+#            [36.,  1.,  0., 52.,  1.],
+#            [23.,  0.,  1., 40.,  0.],
+#            [50.,  1.,  1., 28.,  0.]])
+#     >>> y
+#     array([0., 0., 0., 0., 0., 1., 1., 1., 1., 1.])
+#     >>> trees = tree_grow_b(x=x,y=y,nmin=2,minleaf=1,nfeat=4,m=50)
+#     >>> type(trees), type(trees[0]), len(trees) == m
+#     (<class 'list'>, <class '__main__.Tree'>, True)
+
+#     """
+
+# def tree_pred_b(x,tr,true):
+#     """
+#     /x/ numpy.ndarray, 2D numpy array containing data rows and feature columns
+#     /tr/ list of Tree objects, trees predict a binary label for each row in
+#                           x, which are used to make a majority vote on the
+#                           final predicted labels
+#     /true/ numpy.ndarray, 1D numpy array containing "true" labels
+#
+
+#       Returns -> numpy.ndarray, 1D numpy array containing predicted binary
+#                   labels for each row in x
+
+#       tree_pred_b uses a list of tree objects to predict binary labels on a
+#     given 2D data array x. The main difference with tree_pred is that now we
+#     get for each tree a 1D numpy array of predicted binary labels for each
+#     row in x. A 2D numpy array is constructed where each column corresponds
+#     to all predictions for one tree, and a row corresponds to a row in x.
+#     Therefore we take the majority vote of rows in this array to return a 1D
+#     numpy array with the final predicted labels of the trees.
+
+#     The "true" argument should only be given if predictions metrics are to be
+#     calculated and printed, which gives an immediate idea if the tree is
+#     erronous by seeing low prediction performance on the training data for
+#     example.
+
+#     EXAMPLE:
+#     >>> x
+#     array([[22.,  0.,  0., 28.,  1.],
+#            [46.,  0.,  1., 32.,  0.],
+#            [24.,  1.,  1., 24.,  1.],
+#            [25.,  0.,  0., 27.,  1.],
+#            [29.,  1.,  1., 32.,  0.],
+#            [45.,  1.,  1., 30.,  0.],
+#            [63.,  1.,  1., 58.,  1.],
+#            [36.,  1.,  0., 52.,  1.],
+#            [23.,  0.,  1., 40.,  0.],
+#            [50.,  1.,  1., 28.,  0.]])
+#     >>> type(trees), type(trees[0]), len(trees) == 50
+#     (<class 'list'>, <class '__main__.Tree'>, True)
+#     >>> tree_pred_b(x=x,tr=trees)
+#     array([0, 0, 0, 0, 0, 1, 1, 1, 1, 1])
+
+#     """
+
+#- Miscellaneous functions:
+
+# def major_vote(classes):
+#     """
+#     /classes/ numpy.array, 1D numpy array of zeroes and ones
+
+#       Returns -> int
+
+#       Uses numpy methods to calculate if 1 or 0 elements are the majority in
+#     the classes vector. Note that when the number of 1 and 0 elements are
+#     equal, it returns 0.
+
+#     >>> y
+#     array([0., 0., 0., 0., 0., 1., 1., 1., 1., 1.])
+#     >>> major_vote(y)
+#     0
+
+#     """
+
+
 import numpy as np
-import cProfile
-import pstats
-# import tqdm
-
-# from tqdm import trange
-from pstats import SortKey
-from sklearn import metrics
-
-# age,married,house,income,gender,class
-# [(22, 0, 0, 28, 1, 0)
-#  (46, 0, 1, 32, 0, 0)
-#  (24, 1, 1, 24, 1, 0)
-#  (25, 0, 0, 27, 1, 0)
-#  (29, 1, 1, 32, 0, 0)
-#  (45, 1, 1, 30, 0, 1)
-#  (63, 1, 1, 58, 1, 1)
-#  (36, 1, 0, 52, 1, 1)
-#  (23, 0, 1, 40, 0, 1)
-#  (50, 1, 1, 28, 0, 1)]
-
-# In the program data points are called rows
-
-# In the program categorical or numerical attributes are called cols for columns
-
-# The last column are the classes and will be called as classes in the program
 
 
 class Node:
@@ -58,8 +214,8 @@ class Node:
         leaf node
         """
         self.col = None
-        # This weird numpy line gives the majority vote, which is 1 or 0
         self.split_value_or_rows = major_vote(node_classes)
+
 
 class Tree:
     """
@@ -102,39 +258,116 @@ class Tree:
                 nodes[0] = node.right
         return predictions
 
-    # Work in progress tree printer
-    #
-    # def __repr__(self):
-    #     tree_string = ''
-    #     node = self.tree
-    #     depth = 0
-    #     nodelist = [node]
-    #     while nodelist:
-    #         node = nodelist.pop()
-    #         depth += 1
-    #         if node.col is not None:
-    #             left, right = node.left, node.right
-    #             nodelist += [left, right]
-    #         else:
-    #             continue
-    #         tree_string += '\n' + depth * ' '
-    #         tree_string += (depth + 4) * ' ' + '/' + ' ' * 2 + '\\'
-    #         tree_string += '\n' + ' ' * 2 * depth
-    #         for direc in left, right:
-    #             if not direc.split_value_or_rows%10:
-    #                 tree_string += ' ' * 4
-    #             else:
-    #                 tree_string += ' ' * 3
-    #             tree_string += str(int(direc.split_value_or_rows))
 
-    #     tree_string = depth * ' ' + str(int(self.tree.split_value_or_rows)) + tree_string
-    #     return tree_string
+def tree_grow(x=None, y=None, nmin=None, minleaf=None, nfeat=None) -> Tree:
+    """
+    Builds a classification tree given training data and labels using stopping
+    rule complexity parameters.
+    """
+    mask = np.full(len(x), True)
+    root = Node(split_value_or_rows=mask)
+    tr = Tree(root, (nmin, minleaf, nfeat))
 
+    nodelist = [root]
+    while nodelist:
+        node = nodelist.pop()
+        node_classes = y[node.split_value_or_rows]
+
+        if len(node_classes) < nmin:
+            node.is_leaf_node(node_classes)
+            continue
+
+        if impurity(node_classes) > 0:
+            node_rows = x[node.split_value_or_rows]
+            exhaustive_best_list = exhaustive_split_search(
+                node_rows, node_classes, minleaf)
+            if not exhaustive_best_list:
+                node.is_leaf_node(node_classes)
+                continue
+            best_split = min(exhaustive_best_list, key=lambda z: z[0])
+            nodelist += add_children(node, best_split)
+
+        else:
+            # impurity 0
+            node.is_leaf_node(node_classes)
+            continue
+    return tr
+
+
+def tree_pred(x=None, tr=None, true=None) -> np.array:
+    """
+    Predicts a binary label for each row in x using tr.predict.
+    """
+    y = tr.predict(x).astype(float)
+    nmin, minleaf, nfeat = tr.hyper_params
+    if true is not None:
+        print(
+            f'Results from: prediction single tree({nmin=}, {minleaf=}, {nfeat=})'
+        )
+        print(f'\t->Confusion matrix:\n{metrics.confusion_matrix(y, true)}')
+        print(f'\t->Accuracy:\n\t\t{metrics.accuracy_score(y, true)}')
+        print(f'\t->Precission:\n\t\t{metrics.precision_score(y, true)}')
+        print(f'\t->Recall:\n\t\t{metrics.recall_score(y, true)}')
+    return y
+
+
+def tree_grow_b(x=None,
+                y=None,
+                nmin=None,
+                minleaf=None,
+                nfeat=None,
+                m=None) -> Tree:
+    """
+    The m times repeated application of tree_grow with bagged data.
+    """
+    forest = []
+    for i in range(m):
+        choice = np.random.randint(len(x), size=len(x))
+        x_bag, y_bag = x[choice], y[choice]
+        forest.append(
+            tree_grow(x=x_bag,
+                      y=y_bag,
+                      nmin=nmin,
+                      minleaf=minleaf,
+                      nfeat=nfeat))
+    return forest
+
+
+def tree_pred_b(x=None, tr=None, true=None) -> np.array:
+    """
+    The repeated application of tree.predict to construct a 2D array which is
+    used to make a majority vote label prediction for the rows in x. 
+    """
+    y_bag = np.zeros((len(x), len(tr)))
+    for i, tree in enumerate(tr):
+        y_bag[:, i] = tree.predict(x).astype(float)
+    nmin, minleaf, nfeat = tr[0].hyper_params
+    y = np.array([major_vote(y_bag[i]) for i in range(len(y_bag))])
+    if true is not None:
+        if nfeat == x.shape[1]:
+            print(
+                f'Results from: prediction bagged tree({nmin=}, {minleaf=}, {nfeat=}, trees={len(tr)})'
+            )
+        else:
+            print(
+                f'Results from: prediction random forest({nmin=}, {minleaf=}, {nfeat=}, trees={len(tr)})'
+            )
+        print(f'\t->Confusion matrix:\n{metrics.confusion_matrix(y, true)}')
+        print(f'\t->Accuracy:\n\t\t{metrics.accuracy_score(y, true)}')
+        print(f'\t->Precission:\n\t\t{metrics.precision_score(y, true)}')
+        print(f'\t->Recall:\n\t\t{metrics.recall_score(y, true)}')
+    return y
+
+
+#
+#
+# Put all helper functions below this comment!
 def major_vote(classes):
     """
-    @todo: Docstring for major_vote(classes
+    Returns a zero or one based on the highest occurence in the classes vector.
     """
     return np.argmax(np.bincount(classes.astype(int)))
+
 
 def impurity(array) -> int:
     """
@@ -211,7 +444,7 @@ def bestsplit(x, y, minleaf) -> None:
 
 def exhaustive_split_search(rows, classes, minleaf):
     """
-    @todo: Docstring for exhaustive_split_search
+    The nfeat repeated application of best_split.
     """
     # We hebben enumerate nodig, want we willen weten op welke col (i)
     # (age,married,house,income,gender) we een split doen
@@ -227,7 +460,8 @@ def exhaustive_split_search(rows, classes, minleaf):
 
 def add_children(node, best_split):
     """
-    @todo: Docstring for add_children
+    Processes the splits into the tree data structure and returns children yet
+    to be splitted to the nodelist in tree_grow.
     """
     current_mask = node.split_value_or_rows
     mask_left, mask_right, node_split_value, node_col = best_split[1:]
@@ -253,172 +487,3 @@ def update_mask(mask, current_mask):
     copy = np.array(current_mask, copy=True)
     copy[current_mask == True] = mask
     return copy
-
-
-#
-#
-# Put all helper functions above this comment!
-
-
-def tree_grow(x=None,
-              y=None,
-              nmin=None,
-              minleaf=None,
-              nfeat=None,
-              **defaults) -> Tree:
-    """
-    @todo: Docstring for tree_grow
-    """
-    mask = np.full(len(x), True)
-    root = Node(split_value_or_rows=mask)
-    tr = Tree(root, (nmin, minleaf, nfeat))
-
-    nodelist = [root]
-    while nodelist:
-        node = nodelist.pop()
-        node_classes = y[node.split_value_or_rows]
-
-        if len(node_classes) < nmin:
-            node.is_leaf_node(node_classes)
-            continue
-
-        if impurity(node_classes) > 0:
-            node_rows = x[node.split_value_or_rows]
-            exhaustive_best_list = exhaustive_split_search(
-                node_rows, node_classes, minleaf)
-            if not exhaustive_best_list:
-                node.is_leaf_node(node_classes)
-                continue
-            best_split = min(exhaustive_best_list, key=lambda z: z[0])
-            nodelist += add_children(node, best_split)
-
-        else:
-            # impurity 0
-            node.is_leaf_node(node_classes)
-            continue
-    return tr
-
-
-def tree_grow_b(x=None,
-                y=None,
-                nmin=None,
-                minleaf=None,
-                nfeat=None,
-                m=None,
-                **defaults) -> Tree:
-    forest = []
-    for i in range(m):# ,desc=f'planting a forest, growing {m} trees'):
-        choice = np.random.randint(len(x),size=len(x))
-        x_bag, y_bag = x[choice], y[choice]
-        forest.append(tree_grow(x=x_bag,y=y_bag,nmin=nmin,minleaf=minleaf,nfeat=nfeat))
-    return forest
-
-
-
-def tree_pred(x=None, tr=None, training=None, **defaults) -> np.array:
-    """
-    @todo: Docstring for tree_pred
-    """
-    y = tr.predict(x).astype(float)
-    nmin, minleaf, nfeat = tr.hyper_params
-    if training is not None:
-        # print(np.mean(training == y))
-        print(
-            f'Results from: prediction single tree({nmin=}, {minleaf=}, {nfeat=})'
-        )
-        print(
-            f'\t->Confusion matrix:\n{metrics.confusion_matrix(y, training)}')
-        print(f'\t->Accuracy:\n\t\t{metrics.accuracy_score(y, training)}')
-        print(f'\t->Precission:\n\t\t{metrics.precision_score(y, training)}')
-        print(f'\t->Recall:\n\t\t{metrics.recall_score(y, training)}')
-    return y
-
-
-def tree_pred_b(x=None, tr=None, training=None, **defaults) -> np.array:
-    y_bag = np.zeros((len(x), len(tr)))
-    for i, tree in enumerate(tr):   # , total=len(tr),desc=f'making also {len(tr)} predictions!'):
-        y_bag[:,i] = tree.predict(x).astype(float)
-    nmin, minleaf, nfeat = tr[0].hyper_params
-    y = np.array([major_vote(y_bag[i]) for i in range(len(y_bag))])
-    if training is not None:
-        # print(np.mean(training == y))
-        if nfeat == x.shape[1]:
-            print(
-                f'Results from: prediction bagged tree({nmin=}, {minleaf=}, {nfeat=}, trees={len(tr)})'
-            )
-        else:
-            print(
-                f'Results from: prediction random forest({nmin=}, {minleaf=}, {nfeat=}, trees={len(tr)})'
-            )
-        print(
-            f'\t->Confusion matrix:\n{metrics.confusion_matrix(y, training)}')
-        print(f'\t->Accuracy:\n\t\t{metrics.accuracy_score(y, training)}')
-        print(f'\t->Precission:\n\t\t{metrics.precision_score(y, training)}')
-        print(f'\t->Recall:\n\t\t{metrics.recall_score(y, training)}')
-    return y
-
-
-if __name__ == '__main__':
-    credit_data = np.genfromtxt('./data/credit_score.txt',
-                                delimiter=',',
-                                skip_header=True)
-
-    pima_indians = np.genfromtxt('./data/pima_indians.csv',
-                                 delimiter=',',
-                                 skip_header=True)
-
-    # print("\nDataset: credit data")
-    # tree_pred(x=credit_data[:, :5],
-    #           tr=tree_grow(x=credit_data[:, 0:5],
-    #                        y=credit_data[:, 5],
-    #                        nmin=2,
-    #                        minleaf=1,
-    #                        nfeat=5),
-    #           training=credit_data[:, 5])
-
-    # print("\nDataset: credit data")
-    # tree_pred_b(x=credit_data[:, :5],
-    #             tr=tree_grow_b(x=credit_data[:, 0:5],
-    #                            y=credit_data[:, 5],
-    #                            nmin=2,
-    #                            minleaf=1,
-    #                            nfeat=4,
-    #                            m=50),
-    #             training=credit_data[:, 5])
-
-    # print('\nDataset: pima indians')
-    # tree_pred(x=pima_indians[:, :8],
-    #           tr=tree_grow(x=pima_indians[:, :8],
-    #                        y=pima_indians[:, 8],
-    #                        nmin=20,
-    #                        minleaf=5,
-    #                        nfeat=pima_indians.shape[1] - 1),
-    #           training=pima_indians[:, 8])
-
-
-    # print('\nDataset: pima indians')
-    # tree_pred_b(x=pima_indians[:, :8],
-    #             tr=tree_grow_b(x=pima_indians[:, :8],
-    #                            y=pima_indians[:, 8],
-    #                            nmin=20,
-    #                            minleaf=5,
-    #                            nfeat=4,
-    #                            m=5),
-    #             training=pima_indians[:, 8])
-
-    
-
-    # Time profiles: see what functions take what time! :)
-
-    # print("prediction metrics single tree pima indians:")
-    # cProfile.run("tree_pred(x=credit_data[:,:5], tr=tree_grow(x=credit_data[:,0:5], y=credit_data[:,5], nmin=2, minleaf=1, nfeat=5), dataset='credit score')", 'restats')
-
-    # Time profile of pima indians data prediction with single tree
-    # print("prediction metrics single tree pima indians:")
-    cProfile.run(
-        "tree_pred_b(x=pima_indians[:, :8], tr=tree_grow_b(x=pima_indians[:, :8], y=pima_indians[:, 8], nmin=20, minleaf=5, nfeat=4, m=5), training=pima_indians[:, 8])",
-        'restats')
-
-    p = pstats.Stats('restats')
-    p.sort_stats(SortKey.TIME)
-    p.print_stats()
