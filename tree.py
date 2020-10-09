@@ -203,9 +203,12 @@
 #                     2D data array corresponding to some node
 #     /y/ numpy.array, 1D numpy array of binary labels corresponding to the
 #                     rows in the 2D data array corresponding to some node
-#     /minleaf/ @todo
+#     /minleaf/ int, number of x-rows a child must have before splitting
 
 #       Returns -> tuple
+
+#       Computes the best split based on the given features using the impurity
+#     function.
 
 #     """
 
