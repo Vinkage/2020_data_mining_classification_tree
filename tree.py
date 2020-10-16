@@ -6,16 +6,16 @@ import pandas as pd
 import pstats
 from scipy import stats
 import matplotlib.pyplot as plt
-import seaborn as sns
-# %matplotlib inline
-plt.style.use('seaborn-whitegrid')
-plt.rc('text', usetex=True)
-plt.rc('font', family='times')
-plt.rc('xtick', labelsize=10)
-plt.rc('ytick', labelsize=10)
-plt.rc('font', size=12)
-plt.rc('figure', figsize=(12, 5))
-# import tqdm
+# import seaborn as sns
+# # %matplotlib inline
+# plt.style.use('seaborn-whitegrid')
+# plt.rc('text', usetex=True)
+# plt.rc('font', family='times')
+# plt.rc('xtick', labelsize=10)
+# plt.rc('ytick', labelsize=10)
+# plt.rc('font', size=12)
+# plt.rc('figure', figsize=(12, 5))
+# # import tqdm
 
 # from tqdm import trange
 from pstats import SortKey
@@ -862,32 +862,32 @@ def report():
 
 
 if __name__ == '__main__':
-    # credit_data = np.genfromtxt('./data/credit_score.txt',
-    #                             delimiter=',',
-    #                             skip_header=True)
+    credit_data = np.genfromtxt('./data/credit_score.txt',
+                                delimiter=',',
+                                skip_header=True)
 
-    # pima_indians = np.genfromtxt('./data/pima_indians.csv',
-    #                              delimiter=',',
-    #                              skip_header=True)
+    pima_indians = np.genfromtxt('./data/pima_indians.csv',
+                                 delimiter=',',
+                                 skip_header=True)
 
-    # print("\nDataset: credit data")
-    # tree_pred(x=credit_data[:, :5],
-    #           tr=tree_grow(x=credit_data[:, 0:5],
-    #                        y=credit_data[:, 5],
-    #                        nmin=2,
-    #                        minleaf=1,
-    #                        nfeat=5),
-    #           training=credit_data[:, 5])
+    print("\nDataset: credit data")
+    tree_pred(x=credit_data[:, :5],
+              tr=tree_grow(x=credit_data[:, 0:5],
+                           y=credit_data[:, 5],
+                           nmin=2,
+                           minleaf=1,
+                           nfeat=5),
+              training=credit_data[:, 5])
 
-    # print("\nDataset: credit data")
-    # tree_pred_b(x=credit_data[:, :5],
-    #             tr=tree_grow_b(x=credit_data[:, 0:5],
-    #                            y=credit_data[:, 5],
-    #                            nmin=2,
-    #                            minleaf=1,
-    #                            nfeat=4,
-    #                            m=50),
-    #             training=credit_data[:, 5])
+    print("\nDataset: credit data")
+    tree_pred_b(x=credit_data[:, :5],
+                tr=tree_grow_b(x=credit_data[:, 0:5],
+                               y=credit_data[:, 5],
+                               nmin=2,
+                               minleaf=1,
+                               nfeat=4,
+                               m=50),
+                training=credit_data[:, 5])
 
     # print('\nDataset: pima indians')
     # tree_pred(x=pima_indians[:, :8],
