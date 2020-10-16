@@ -279,15 +279,10 @@ def update_mask(mask, current_mask):
 #
 # Put all helper functions above this comment!
 
-
-def tree_grow(x=None,
-              y=None,
-              nmin=None,
-              minleaf=None,
-              nfeat=None,
-              **defaults) -> Tree:
+def tree_grow(x=None, y=None, nmin=None, minleaf=None, nfeat=None) -> Tree:
     """
-    @todo: Docstring for tree_grow
+    Builds a classification tree given training data and labels using stopping
+    rule complexity parameters.
     """
     mask = np.full(len(x), True)
     root = Node(split_value_or_rows=mask)
@@ -303,9 +298,17 @@ def tree_grow(x=None,
             continue
 
         if impurity(node_classes) > 0:
-            node_rows = x[node.split_value_or_rows]
+            # FIX: feature choice that was lost in versioning
+            # OLD: node_rows = x[node.split_value_or_rows]
+            # node_rows = x[node.split_value_or_rows]
+            # print(node.split_value_or_rows)
+
+            nfeat_col_choice = np.random.choice(range(x.shape[1]), nfeat, replace=False)
+            feat_select = np.sort(nfeat_col_choice)
+            node_rows = x[node.split_value_or_rows][:, feat_select]
+
             exhaustive_best_list = exhaustive_split_search(
-                node_rows, node_classes, minleaf)
+                node_rows, node_classes, feat_select, minleaf)
             if not exhaustive_best_list:
                 node.is_leaf_node(node_classes)
                 continue
