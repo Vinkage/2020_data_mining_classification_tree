@@ -229,9 +229,9 @@ def bestsplit(x, y, minleaf) -> None:
         return False
 
 
-def exhaustive_split_search(rows, classes, minleaf):
+def exhaustive_split_search(rows, classes, feat_select, minleaf):
     """
-    @todo: Docstring for exhaustive_split_search
+    The nfeat repeated application of bestsplit.
     """
     # We hebben enumerate nodig, want we willen weten op welke col (i)
     # (age,married,house,income,gender) we een split doen
@@ -240,7 +240,7 @@ def exhaustive_split_search(rows, classes, minleaf):
         col_best_split = bestsplit(col, classes, minleaf)
         if col_best_split:
             # add for which row we calculated the best split
-            col_best_split += (i, )
+            col_best_split += (feat_select[i], )
             exhaustive_best_list.append(col_best_split)
     return exhaustive_best_list
 
