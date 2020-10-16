@@ -1,7 +1,7 @@
 #- Names and student no.:
 
 # Hunter Sterk 6981046
-# Lonnie Bregman 123456789
+# Lonnie Bregman 6980562
 # Mike Vink 5585791
 
 #- Main functions:
