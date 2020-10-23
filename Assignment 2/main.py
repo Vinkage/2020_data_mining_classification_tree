@@ -2,7 +2,6 @@ import fnmatch
 import os
 import pandas as pd
 import regex as re
-from nltk.corpus import stopwords
 
 
 def fetch_reviews(testdata):
@@ -40,10 +39,6 @@ def fetch_reviews(testdata):
     data = pd.merge(reviews, labels, right_index=True, left_index=True)
     # convert reviews to lowercase
     data['Review'] = data['Review'].map(lambda x: x.lower())
-    # remove stopwords
-    stop = stopwords.words('english')
-    data['Review without stopwords'] = data['Review'].apply(lambda x: ' '.join(
-        [word for word in x.split() if word not in (stop)]))
 
     return data
 
