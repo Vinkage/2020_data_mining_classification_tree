@@ -1,7 +1,9 @@
+import numpy as np
 import re
 import string
 from pathlib import Path
 import pandas as pd
+from pandas.core.common import random_state
 from sklearn.feature_extraction.text import CountVectorizer
 
 # from liwc import Liwc
@@ -132,50 +134,96 @@ def preprocessing(df,
             # print(df.head())
         df = df.reindex(sorted(df_stacked.columns), axis=1)
 
-    # Here we assemble the document term count dataframe, which we will use to let our models learn
-    total_tm = []
-    folds_tm = []
-    labels = df[df.columns[-1]]
+    # First we construct the corpus document term matrix, and then split it into fold matrices again
+    if pos_tagging:
+        df_corpus = pd.DataFrame.from_dict({'reviews': [], 'pos_tags': [], 'label': []})
+        step = 2
+    else:
+        df_corpus = pd.DataFrame.from_dict({'reviews': [], 'label': []})
+        step = 1
 
-    # print(labels)
-    # print(df.columns)
-    vectorizer = CountVectorizer()
-    for fold in df.columns[:-1:2]:
-        reviews = df[fold]
-        review_count_vector = vectorizer.fit_transform(reviews)
-        df_fold = pd.DataFrame(review_count_vector.toarray().transpose(), index=vectorizer.get_feature_names())
-        df_fold = df_fold.transpose()
+
+    for fold in df.columns[:-1:step]:
         if pos_tagging:
-            pos_tags = df[fold+'_pos'].apply(lambda review: ' '.join(['pos_' + tagged_word[1] for tagged_word in review]))
-            pos_tags_count_vector = vectorizer.fit_transform(pos_tags)
-            df_pos_tags = pd.DataFrame(pos_tags_count_vector.toarray().transpose(), index=vectorizer.get_feature_names())
-            df_pos_tags = df_pos_tags.transpose()
-            df_fold = pd.concat([df_fold, df_pos_tags], axis=1)
-        folds_tm.append(df_fold)
+            df_fold = df[[fold, fold+'_pos', 'label']]
+            df_fold = df_fold.rename(columns={fold:'reviews', fold+'_pos':'pos_tags'})
+        else:
+            print(fold)
+            df_fold = df[[fold, 'label']]
+            df_fold = df_fold.rename(columns={fold:'reviews'})
+        df_corpus = pd.concat([df_corpus, df_fold], ignore_index=True)
 
-        # print(df_fold.shape)
-        # print(df_fold.head())
-    return folds_tm, labels
+    print(df_corpus.shape)
+    print(df_corpus.head())
+
+    vectorizer = CountVectorizer()
+    reviews = df_corpus['reviews']
+    review_count_vector = vectorizer.fit_transform(reviews)
+    corpus_tm = pd.DataFrame(review_count_vector.toarray().transpose(), index=vectorizer.get_feature_names())
+    corpus_tm = corpus_tm.transpose()
+    # print(corpus_tm.shape)
+    # print(corpus_tm.head())
+
+    if pos_tagging:
+        pos_tags = df_corpus['pos_tags'].apply(lambda review: ' '.join(['pos_' + tagged_word[1] for tagged_word in review]))
+        pos_tags_count_vector = vectorizer.fit_transform(pos_tags)
+        df_pos_tags = pd.DataFrame(pos_tags_count_vector.toarray().transpose(), index=vectorizer.get_feature_names())
+        df_pos_tags = df_pos_tags.transpose()
+        corpus_tm = pd.concat([corpus_tm, df_pos_tags], axis=1)
+
+    if ngrams > 1:
+        ngram_reviews = df_corpus['reviews']
+        for ngram_size in range(2, ngrams + 1):
+            vectorizer = CountVectorizer(ngram_range=(ngram_size, ngram_size))
+            ngram_reviews_count_vector = vectorizer.fit_transform(ngram_reviews)
+            df_ngram_reviews = pd.DataFrame(ngram_reviews_count_vector.toarray().transpose(), index=vectorizer.get_feature_names())
+            df_ngram_reviews = df_ngram_reviews.transpose()
+            corpus_tm = pd.concat([corpus_tm, df_ngram_reviews], axis=1)
+            # print(df_ngram_reviews.shape)
+            # print(df_ngram_reviews.head())
+            # for ngram in df_ngram_reviews.iloc[0][df_ngram_reviews.iloc[0] > 0].index:
+            #     print(ngram)
+
+
+
+
+    # First 4 * 160 documents are training data
+    X_train_corpus = corpus_tm[:640].to_numpy()
+    y_train_corpus = np.array(df_corpus['label'][:640])
+
+    X_test_corpus = corpus_tm[640:].to_numpy()
+    y_test_corpus = np.array(df_corpus['label'][640:])
+
+    # List of term matrices of first 4 folds, and their labels
+    X_dev_folds = []
+    y_dev_folds = []
+    for i in range(0, len(corpus_tm) - 160, 160):
+
+        X_dev_fold = corpus_tm[i:i+160]
+        X_dev_folds.append(X_dev_fold.to_numpy())
+
+        y_dev_fold = df_corpus['label'][i:i+160]
+        y_dev_folds.append(y_dev_fold)
+
+    return df_corpus, corpus_tm, X_train_corpus, y_train_corpus, X_test_corpus, y_test_corpus, X_dev_folds, y_dev_folds
 
 df_stacked = read_into_pandas_dataframe()
-tm_of_folds, labels = preprocessing(df_stacked,
-                                    del_punkt=True,
-                                    lower_case=True,
-                                    del_numbers=True,
-                                    del_stopwords=True,
-                                    stemming=False,
-                                    pos_tagging=True,
-                                    ngrams=1)
+
+df_corpus, corpus_tm, X_train_corpus, y_train_corpus, X_test_corpus, y_test_corpus, X_dev_folds, y_dev_folds = preprocessing(df_stacked,
+                del_punkt=True,
+                lower_case=True,
+                del_numbers=True,
+                del_stopwords=True,
+                stemming=False,
+                pos_tagging=False,
+                ngrams=1)
 
 
-def modelling_experiment(tm_of_folds, labels):
-    # print(type(tm_of_folds[0].to_))
-    tree = DecisionTreeClassifier()
-    tree.fit(tm_of_folds[0].to_numpy(), np.array(labels))
-    # y_true = labels.to_numpy()
-    # print(y_true)
+def modelling_experiment(X_train, y_train, X_test, y_test):
+    print(X_train.shape)
+    tree = DecisionTreeClassifier(random_state=0)
+    tree.fit(X_train, y_train)
+    y_pred = tree.predict(X_test)
+    print(accuracy_score(y_test, y_pred))
 
-    # y_pred = tree.predict(tm_of_folds[-1], labels)
-    # print(accuracy_score())
-
-modelling_experiment(tm_of_folds, labels)
+modelling_experiment(X_train_corpus, y_train_corpus, X_test_corpus, y_test_corpus)
