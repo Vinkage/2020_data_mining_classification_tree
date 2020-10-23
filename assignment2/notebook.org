@@ -1,0 +1,39 @@
+#+TITLE: Assignment two: Detection opinion spam
+#+LATEX_HEADER: \usepackage{booktabs}
+#+LATEX_HEADER: \newcommand{\ra}[1]{\renewcommand{\arraystretch}{#1}}
+
+
+* Introduction
+
+#+ATTR_LATEX: :environment longtable :align rrrrr
+#+CAPTION: I'm a caption
+|---------------+--------------+-----------+------------+----------|
+| \(hello\)     | oawejfoij    | qowiejfoj | qwoiefjoij | oiwqofij |
+|---------------+--------------+-----------+------------+----------|
+| hello im data | awoiejfeowij |           |            |          |
+|               | awoiejfeowij |           |            |          |
+
+* Dataset construction
+
+** Selection of data
+
+The dataset used in this paper is derived from the [[https://myleott.com/op-spam.html][publicly available dataset]] of
+/negative/ deceptive opinion spam contributed by cite:ott2013negative, containing
+400 gold standard deceptive negative reviews of 20 popular Chicago hotels, and
+400 truthfully negative reviews. This data consists of text files that were used
+to construct our dataset, no cleaning of the data was necessary in this case.
+
+** Preprocessing of the textual data
+
+
+
+** Construction of derived features
+
+*
+
+* Deception classification results
+* Conclusion
+
+* References
+bibliography:/Users/mikevink/Documents/bibliography/references.bib
+bibliographystyle:unsrt

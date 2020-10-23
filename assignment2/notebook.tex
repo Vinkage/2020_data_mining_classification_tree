@@ -1,0 +1,80 @@
+% Created 2020-10-23 Fri 09:15
+% Intended LaTeX compiler: pdflatex
+\documentclass[11pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{graphicx}
+\usepackage{grffile}
+\usepackage{longtable}
+\usepackage{wrapfig}
+\usepackage{rotating}
+\usepackage[normalem]{ulem}
+\usepackage{amsmath}
+\usepackage{textcomp}
+\usepackage{amssymb}
+\usepackage{capt-of}
+\usepackage{hyperref}
+\usepackage{txfonts}
+\usepackage{mdframed}
+\usepackage{booktabs}
+\newcommand{\ra}[1]{\renewcommand{\arraystretch}{#1}}
+\author{Mike Vink}
+\date{\today}
+\title{Assignment two: Detection opinion spam}
+\hypersetup{
+ pdfauthor={Mike Vink},
+ pdftitle={Assignment two: Detection opinion spam},
+ pdfkeywords={},
+ pdfsubject={},
+ pdfcreator={Emacs 27.1 (Org mode 9.4)}, 
+ pdflang={English}}
+\begin{document}
+
+\maketitle
+\tableofcontents
+
+
+
+\section{Introduction}
+\label{sec:orgaec8a4b}
+
+\begin{center}
+\begin{tabular}{lllll}
+\toprule
+ &  &  & qwoiefjoij & oiwqofij\\
+\midrule
+hello im data &  &  &  & \\
+\bottomrule
+\end{tabular}
+\end{center}
+\section{Dataset construction}
+\label{sec:org3b31006}
+
+\subsection{Selection of data}
+\label{sec:org4385126}
+
+The dataset used in this paper is derived from the \href{https://myleott.com/op-spam.html }{publicly available dataset} of
+\emph{negative} deceptive opinion spam contributed by \cite{ott2013negative}, containing
+400 gold standard deceptive negative reviews of 20 popular Chicago hotels, and
+400 truthfully negative reviews. This data consists of text files that were used
+to construct our dataset, no cleaning of the data was necessary in this case.  
+
+\subsection{Preprocessing of the textual data}
+\label{sec:org0bb6935}
+
+\subsection{Construction of derived features}
+\label{sec:org4a7f6a4}
+
+\section{}
+\label{sec:orge88a914}
+
+\section{Deception classification results}
+\label{sec:orgbb4f498}
+\section{Conclusion}
+\label{sec:org44818c1}
+
+\section{References}
+\label{sec:org0381bfb}
+\bibliography{../../../bibliography/references}
+\bibliographystyle{unsrt}
+\end{document}
