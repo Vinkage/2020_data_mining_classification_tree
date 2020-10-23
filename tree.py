@@ -1,7 +1,9 @@
+import numpy as np
+from sklearn import metrics
 #- Names and student no.:
 
 # Hunter Sterk 6981046
-# Lonnie Bregman 123456789
+# Lonnie Bregman 6980562
 # Mike Vink 5585791
 
 #- Main functions:
@@ -203,61 +205,62 @@
 #                     2D data array corresponding to some node
 #     /y/ numpy.array, 1D numpy array of binary labels corresponding to the
 #                     rows in the 2D data array corresponding to some node
-#     /minleaf/ @todo
+#     /minleaf/ int, number of x-rows a child must have before splitting
 
 #       Returns -> tuple
 
+#      Computes the best split based on the given features using the impurity
+#    function.
+
+#    EXAMPLE:
+#    >>> x
+#    array([28., 32., 24., 27., 32., 30., 58., 52., 40., 28.])
+#    >>> y
+#    array([0., 0., 0., 0., 0., 1., 1., 1., 1., 1.])
+#    >>> bestsplit(x,y,minleaf=1)
+#    (1.4285714285714286, array([False, False, False, False, False, False,  True,  True,  True,
+#           False]), array([ True,  True,  True,  True,  True,  True, False, False, False,
+#            True]), 36.0)
+#  
+
 #     """
 
-    
+# def exhaustive_split_search(rows, classes, minleaf):
+#     """
+#     /rows/ numpy.array, 2D data array corresponding to some node
+#     /classes/ numpy.array, 1D numpy array of binary labels corresponding to the
+#                     rows in the 2D data array corresponding to some node
+#     /minleaf/ int, number of x-rows a child must have before splitting
 
-def bestsplit(x, y, minleaf) -> None:
-    """
-    x = vector of single col
-    y = vector of classes (last col in x)
+#       Returns -> List
 
-    Consider splits of type "x <= c" where "c" is the average of two consecutive
-    values of x in the sorted order.
+#       Stores the best splits computed with the bestsplit function for the
+#     considered columns in a list, if the list is empty then there are no
+#     splits and the node becomes a leaf node.
 
-    x and y must be of the same length
+#     """
 
-    y[i] must be the class label of the i-th observation, and x[i] is the
-    correspnding value of attribute x
+# def add_children(node, best_split):
+#     """
+#     /node/ Node object, the current node in the main tree growing loop
+#     /best_split/ tuple, tuple containing (delta_i, rows_left, rows_right, splitvalue)
 
-    Example (best split on income):
+#       Processes the splits into the tree data structure and returns children yet
+#     to be splitted to the main nodelist in tree_grow.
 
-    >>> bestsplit(credit_data[:,3],credit_data[:,5])
-     36
-    """
-    x_sorted = np.sort(np.unique(x))
-    split_points = (x_sorted[:len(x_sorted) - 1] + x_sorted[1:]) / 2
+#     """
 
-    # Hieren stoppen we (delta_i, split_value, rows_left, rows_right)
-    best_list = []
-    while split_points.size != 0:
-        split_value = split_points[-1]
+# def update_mask(mask, current_mask):
+#     """
+#     /mask/ np.array, 1D boolean vector corresponding to the rows in the new
+#       child node that might have a length that is incompatible with the rows in
+#       the main 2D data array x of tree_grow
+#     /current_mask/ np.array, 1D boolean vector corresponding to the rows in the current node
 
-        mask_left, mask_right = x > split_value, x <= split_value
-        classes_left, classes_right = y[mask_left], y[mask_right]
+#       Updates the spit bool array from any dimension to an array with length
+#     equal to the total number of rows in dataset x of tree_grow.
 
-        if len(classes_left) < minleaf or len(classes_right) < minleaf:
-            split_points = split_points[:-1]
-            continue
-
-        delta_i = (impurity(classes_left) * len(classes_left) +
-                   impurity(classes_right) * len(classes_right))
-
-        best_list.append((delta_i, mask_left, mask_right, split_value))
-
-        split_points = split_points[:-1]
-
-    # Bereken de best split voor deze x col, als er ten minste 1 bestaat die
-    # voldoet aan min leaf
-    if best_list:
-        return min(best_list, key=lambda x: x[0])
-    else:
-        return False
-
+#     """
 
 import numpy as np
 
@@ -358,9 +361,17 @@ def tree_grow(x=None, y=None, nmin=None, minleaf=None, nfeat=None) -> Tree:
             continue
 
         if impurity(node_classes) > 0:
-            node_rows = x[node.split_value_or_rows]
+            # FIX: feature choice that was lost in versioning
+            # OLD: node_rows = x[node.split_value_or_rows]
+            # node_rows = x[node.split_value_or_rows]
+            # print(node.split_value_or_rows)
+
+            nfeat_col_choice = np.random.choice(range(x.shape[1]), nfeat, replace=False)
+            feat_select = np.sort(nfeat_col_choice)
+            node_rows = x[node.split_value_or_rows][:, feat_select]
+
             exhaustive_best_list = exhaustive_split_search(
-                node_rows, node_classes, minleaf)
+                node_rows, node_classes, feat_select, minleaf)
             if not exhaustive_best_list:
                 node.is_leaf_node(node_classes)
                 continue
@@ -509,7 +520,7 @@ def bestsplit(x, y, minleaf) -> None:
         return False
 
 
-def exhaustive_split_search(rows, classes, minleaf):
+def exhaustive_split_search(rows, classes, feat_select, minleaf):
     """
     The nfeat repeated application of bestsplit.
     """
@@ -520,7 +531,7 @@ def exhaustive_split_search(rows, classes, minleaf):
         col_best_split = bestsplit(col, classes, minleaf)
         if col_best_split:
             # add for which row we calculated the best split
-            col_best_split += (i, )
+            col_best_split += (feat_select[i], )
             exhaustive_best_list.append(col_best_split)
     return exhaustive_best_list
 
@@ -554,3 +565,31 @@ def update_mask(mask, current_mask):
     copy = np.array(current_mask, copy=True)
     copy[current_mask == True] = mask
     return copy
+
+if __name__ == '__main__':
+    c = np.loadtxt('./data/credit_score.txt', delimiter=',', skiprows=1)
+    x, y = c[:,0:5], c[:,5]
+    tr = tree_grow(x=x, y=y, nmin=2, minleaf=1, nfeat=5)
+    tree_pred(x, tr, true=y)
+
+    c = np.loadtxt('./data/credit_score.txt', delimiter=',', skiprows=1)
+    x, y = c[:,0:5], c[:,5]
+
+    trs = tree_grow_b(x=x, y=y, nmin=2, minleaf=1, nfeat=4, m=50)
+    tree_pred_b(x, trs, true=y)
+
+
+    c = np.loadtxt('./data/pima_indians.csv', delimiter=',')
+    x, y = c[:,0:8], c[:,8].astype(int)
+
+    tr = tree_grow(x=x, y=y, nmin=20, minleaf=5, nfeat=8)
+    tree_pred(x, tr, true=y)
+
+
+    c = np.loadtxt('./data/pima_indians.csv', delimiter=',')
+    x, y = c[:,0:8], c[:,8].astype(int)
+
+    trs = tree_grow_b(x=x, y=y, nmin=20, minleaf=5, nfeat=4, m=5)
+    tree_pred_b(x, trs, true=y)
+
+
