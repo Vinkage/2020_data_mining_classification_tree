@@ -2,38 +2,399 @@
 #+LATEX_HEADER: \usepackage{booktabs}
 #+LATEX_HEADER: \newcommand{\ra}[1]{\renewcommand{\arraystretch}{#1}}
 
+#+exclude_tags:  notexportpls
 
 * Introduction
-
-#+ATTR_LATEX: :environment longtable :align rrrrr
-#+CAPTION: I'm a caption
-|---------------+--------------+-----------+------------+----------|
-| \(hello\)     | oawejfoij    | qowiejfoj | qwoiefjoij | oiwqofij |
-|---------------+--------------+-----------+------------+----------|
-| hello im data | awoiejfeowij |           |            |          |
-|               | awoiejfeowij |           |            |          |
-
 * Dataset construction
-
 ** Selection of data
 
 The dataset used in this paper is derived from the [[https://myleott.com/op-spam.html][publicly available dataset]] of
 /negative/ deceptive opinion spam contributed by cite:ott2013negative, containing
 400 gold standard deceptive negative reviews of 20 popular Chicago hotels, and
 400 truthfully negative reviews. This data consists of text files that were used
-to construct our dataset, no cleaning of the data was necessary in this case.
+to construct our dataset, no cleaning of the data was necessary.
 
-** Preprocessing of the textual data
+** Preprocessing approaches for the review text data
 
-
+The raw review text data was first preprocessed into a representation that is
+suitable for a classification task. That is, the text was represented as a bag
+of words, meaning that only the number of occurences of the words were
+considered regardless of order. The result is a document term matrix, where the
+total number of terms depends on the preprocessing choices made before an
+experiment. Stripping, lower casing, stopword-, punctuation-, and
+number-deletion will be used for all experiments. The remaining choice is
+whether to include stemming, but this might be left out depending on results of
+the experiment.
 
 ** Construction of derived features
 
-*
+The features, i.e., the number of terms in the document term matrix, used in the
+experiments were transformed further. The different options that were explored
+in this work were the usage of genre identification by part of speech (POS)
+tagging, and two different text categorisations: unigrams (UNIGRAMS) and bigrams
+(BIGRAMS). Specifically, we consider for each of the classification methods the
+following feature sets: UNIGRAMS, BIGRAMS+, and possibly other combinations
+using the POS tags. The plus symbol indicates that the unigrams are also
+included in the bigrams feature set.
 
 * Deception classification results
-* Conclusion
+#+NAME: tbl:1
+#+ATTR_LATEX: :environment longtable :align rrrrrrrr
+#+CAPTION: Classifier performance on the training set (640 reviews Cross. Val.) and the test set (160 reviews Held Out)
++-------------------------+--------------+--------+---+----------+---+
+| Model                   | Features     |Accuracy| P | R        | F |
++-------------------------+--------------+--------+---+----------+---+
+| Multinomial naive bayes |  Unigrams    |        |   |          |   |
++-------------------------+--------------+--------+---+----------+---+
+|                         |  Bigrams     |        |   |          |   |
++-------------------------+--------------+--------+---+----------+---+
+| Logistic regression     |  Unigrams    |        |   |          |   |
++-------------------------+--------------+--------+---+----------+---+
+|                         |  Bigrams     |        |   |          |   |
++-------------------------+--------------+--------+---+----------+---+
+| Random forests          |  Unigrams    |        |   |          |   |
++-------------------------+--------------+--------+---+----------+---+
+|                         |  Bigrams     |        |   |          |   |
++-------------------------+--------------+--------+---+----------+---+
+** Multinomial naive bayes
+** Logistic regression
+** Classification trees and random forests
 
+#+begin_src jupyter-python :file trees_results.png :session py :exports results
+print(tree_results)
+#+end_src
+
+#+RESULTS:
+#+begin_example
+{'rs_cv': {'mean_fit_time': array([0.40971953, 0.44211054, 0.36634946, 0.37365645, 0.42667651,
+       0.38482177, 0.37794042, 0.41938919, 0.36086553, 0.35133702]), 'std_fit_time': array([0.02942076, 0.05097536, 0.01381808, 0.02740812, 0.05556146,
+       0.01091773, 0.03589068, 0.06957446, 0.01656752, 0.01152154]), 'mean_score_time': array([0.00442922, 0.00471127, 0.00344318, 0.00347799, 0.00309151,
+       0.00369084, 0.00325328, 0.00348622, 0.00348067, 0.00333709]), 'std_score_time': array([0.00228727, 0.00217149, 0.00033122, 0.00081673, 0.00019717,
+       0.00065289, 0.00026276, 0.00052236, 0.00058781, 0.00022052]), 'param_ccp_alpha': masked_array(data=[0.0019727930277718634, 0.0033028245263789723,
+                   0.00432029961013853, 0.0003586474798493363,
+                   0.0035005952079849236, 0.0008657725845736325,
+                   0.00831807197577447, 0.008421932033691097,
+                   0.002875040286387792, 0.0019902780533179116],
+             mask=[False, False, False, False, False, False, False, False,
+                   False, False],
+       fill_value='?',
+            dtype=object), 'params': [{'ccp_alpha': 0.0019727930277718634}, {'ccp_alpha': 0.0033028245263789723}, {'ccp_alpha': 0.00432029961013853}, {'ccp_alpha': 0.0003586474798493363}, {'ccp_alpha': 0.0035005952079849236}, {'ccp_alpha': 0.0008657725845736325}, {'ccp_alpha': 0.00831807197577447}, {'ccp_alpha': 0.008421932033691097}, {'ccp_alpha': 0.002875040286387792}, {'ccp_alpha': 0.0019902780533179116}], 'split0_test_score': array([0.69375, 0.6875 , 0.66875, 0.675  , 0.6875 , 0.65625, 0.70625,
+       0.70625, 0.66875, 0.66875]), 'split1_test_score': array([0.68125, 0.68125, 0.7    , 0.7    , 0.69375, 0.6875 , 0.725  ,
+       0.725  , 0.70625, 0.6875 ]), 'split2_test_score': array([0.61875, 0.61875, 0.6375 , 0.68125, 0.64375, 0.65625, 0.64375,
+       0.68125, 0.61875, 0.65   ]), 'split3_test_score': array([0.6125 , 0.59375, 0.58125, 0.60625, 0.6    , 0.6    , 0.5625 ,
+       0.5625 , 0.59375, 0.59375]), 'mean_test_score': array([0.6515625, 0.6453125, 0.646875 , 0.665625 , 0.65625  , 0.65     ,
+       0.659375 , 0.66875  , 0.646875 , 0.65     ]), 'std_test_score': array([0.03627558, 0.04011093, 0.04386147, 0.03549318, 0.03775952,
+       0.03156095, 0.0635075 , 0.06327643, 0.04363825, 0.03507804]), 'rank_test_score': array([ 5, 10,  9,  2,  4,  6,  3,  1,  8,  6], dtype=int32)}, 'tree': DecisionTreeClassifier(ccp_alpha=0.008421932033691097), 'confusion_train': array([[254,  70],
+       [ 66, 250]]), 'confusion_test': array([[46, 21],
+       [34, 59]])}
+#+end_example
+
+*** Trees code :notexportpls:
+
+#+begin_src jupyter-python :session py :exports results :results graphics :eval no-export
+import preprocessing as prep
+import trees as tr
+importlib.reload(prep)
+importlib.reload(tr)
+
+
+
+df_corpus, corpus_tm, X_train_corpus, y_train_corpus, X_test_corpus, y_test_corpus, X_dev_folds, y_dev_folds = prep.preprocessing(prep.read_into_pandas_dataframe(),
+                del_punkt=True,
+                lower_case=True,
+                del_numbers=True,
+                del_stopwords=True,
+                stemming=False,
+                pos_tagging=True,
+                ngrams=0)
+
+# tr.single_tree_modelling_experiment()
+#+end_src
+
+#+begin_src jupyter-python :session py :exports none :results graphics :eval no-export
+import importlib
+importlib.reload(tr)
+grid_search = None
+random_search = {'ccp_alpha': tr.uniform(loc=0.0, scale=0.009)}
+tree_results = tr.single_tree_modelling_experiment(X_train_corpus,
+                                y_train_corpus,
+                                X_test_corpus,
+                                y_test_corpus,
+                                grid_search=grid_search,
+                                random_search=random_search)
+#+end_src
+
+#+RESULTS:
+
+#+begin_src jupyter-python :session py
+print(tree_results)
+#+end_src
+
+#+RESULTS:
+#+begin_example
+{'rs_cv': {'mean_fit_time': array([0.35861218, 0.35545075, 0.34067148, 0.3668313 , 0.34146553,
+       0.33936489, 0.34393203, 0.37945294, 0.38329148, 0.37182993]), 'std_fit_time': array([0.03372442, 0.02194642, 0.03398316, 0.0431621 , 0.02756554,
+       0.03487094, 0.02089317, 0.01789596, 0.03531794, 0.01577855]), 'mean_score_time': array([0.00437903, 0.00311023, 0.00289071, 0.0028488 , 0.00285888,
+       0.00284159, 0.00294244, 0.00285804, 0.00294167, 0.00299764]), 'std_score_time': array([2.47843703e-03, 4.83695049e-04, 9.15525015e-05, 4.24731089e-05,
+       6.05768547e-05, 3.79372209e-05, 1.01130588e-04, 4.18998184e-05,
+       1.40749109e-04, 1.89321242e-04]), 'param_ccp_alpha': masked_array(data=[0.006583505877505594, 0.0050425684596346575,
+                   0.001240052241346062, 0.005376989666135501,
+                   0.0012734804734235118, 0.0049979383733844375,
+                   0.0005842303357296395, 0.004114697944356574,
+                   0.0021359100404160854, 0.006098616359624398],
+             mask=[False, False, False, False, False, False, False, False,
+                   False, False],
+       fill_value='?',
+            dtype=object), 'params': [{'ccp_alpha': 0.006583505877505594}, {'ccp_alpha': 0.0050425684596346575}, {'ccp_alpha': 0.001240052241346062}, {'ccp_alpha': 0.005376989666135501}, {'ccp_alpha': 0.0012734804734235118}, {'ccp_alpha': 0.0049979383733844375}, {'ccp_alpha': 0.0005842303357296395}, {'ccp_alpha': 0.004114697944356574}, {'ccp_alpha': 0.0021359100404160854}, {'ccp_alpha': 0.006098616359624398}], 'split0_test_score': array([0.6625 , 0.65   , 0.61875, 0.66875, 0.63125, 0.6625 , 0.6375 ,
+       0.66875, 0.64375, 0.6625 ]), 'split1_test_score': array([0.625  , 0.60625, 0.64375, 0.61875, 0.63125, 0.625  , 0.6375 ,
+       0.63125, 0.61875, 0.64375]), 'split2_test_score': array([0.6625 , 0.65625, 0.65625, 0.64375, 0.65625, 0.64375, 0.65   ,
+       0.63125, 0.65625, 0.65   ]), 'split3_test_score': array([0.5625 , 0.59375, 0.59375, 0.625  , 0.5125 , 0.575  , 0.625  ,
+       0.6    , 0.625  , 0.5625 ]), 'mean_test_score': array([0.628125 , 0.6265625, 0.628125 , 0.6390625, 0.6078125, 0.6265625,
+       0.6375   , 0.6328125, 0.6359375, 0.6296875]), 'std_test_score': array([0.04086468, 0.02701815, 0.02400358, 0.01945297, 0.05596717,
+       0.03258852, 0.00883883, 0.02435696, 0.0149053 , 0.03937376]), 'rank_test_score': array([ 6,  8,  6,  1, 10,  8,  2,  4,  3,  5], dtype=int32)}, 'tree': DecisionTreeClassifier(ccp_alpha=0.005376989666135501), 'confusion_train': array([[290,  41],
+       [ 30, 279]]), 'confusion_test': array([[47, 20],
+       [33, 60]])}
+#+end_example
+
+
+*** random forest code :notexportpls:
+**** Unigram
+
+#+begin_src jupyter-python :session py :exports results :results graphics :eval no-export
+import preprocessing as prep
+import trees as tr
+import importlib
+importlib.reload(prep)
+
+
+df_corpus, corpus_tm, X_train, y_train, X_test, y_test = prep.preprocessing(prep.read_into_pandas_dataframe(),
+                    lower_case=True,
+                    pos_tagging=False,
+                    del_stopwords=True,
+                    del_punkt=True,
+                    del_numbers=True,
+                    stemming=True,
+                    ngrams=1)
+
+
+print(corpus_tm.shape)
+print(df_corpus.head())
+#+end_src
+
+#+RESULTS:
+: (800, 5519)
+:                                              reviews  label
+: 0  nt actual stay hotel yet alreadi disappoint cu...    1.0
+: 1  month prior 5night reserv hilton chicago reque...    1.0
+: 2  parent book five night jame locat good review ...    1.0
+: 3  nonsmok room smell badli stale cigarett smoke ...    1.0
+: 4  hotel belong leagu peninsula four season ritz ...    1.0
+
+This is after the 10x10 experiment using no pos tags, no stemming
+#+begin_src jupyter-python :session py :exports none :results graphics :eval no-export
+importlib.reload(tr)
+import numpy as np
+import scipy.stats as stats
+# grid_search = {'n_estimators':[10,20,50,100], 'max_features':['sqrt', 'log2']}
+
+grid_search = None
+random_search = {'n_estimators': stats.randint(50, 1000), 'max_features': stats.randint(int(np.sqrt(X_train_corpus.shape[1])), 10 * int(np.sqrt(X_train_corpus.shape[1])))}
+# random_search = None
+rf_best = {'accuracy_test':0}
+given = {}
+for iteration in range(0,10):
+    print("iteration start")
+    rf_results = tr.random_forest_experiment(X_train_corpus,
+                                    y_train_corpus,
+                                    X_test_corpus,
+                                    y_test_corpus,
+                                    grid_search=grid_search,
+                                    random_search=random_search,
+                                    given_parameters=given)
+    if rf_results['accuracy_test'] > rf_best['accuracy_test']:
+        rf_best = rf_results
+
+print(rf_best)
+#+end_src
+
+#+RESULTS:
+#+begin_example
+iteration start
+iteration start
+iteration start
+iteration start
+iteration start
+iteration start
+iteration start
+iteration start
+iteration start
+iteration start
+{'rs_cv': {'mean_fit_time': array([10.24917614, 22.41791224,  2.89278722,  2.90936041,  8.8288005 ,
+        6.01878351,  7.0909245 , 21.28192627,  2.48694766, 18.41872442]), 'std_fit_time': array([1.62287162, 2.91365224, 0.06455308, 0.61014917, 0.56831826,
+       0.42246289, 0.20173549, 4.03176326, 0.05496942, 0.45335647]), 'mean_score_time': array([0.18500036, 0.14765626, 0.02201301, 0.04671454, 0.14202857,
+       0.07097125, 0.13137245, 0.13218421, 0.02171206, 0.1144461 ]), 'std_score_time': array([0.16068937, 0.03053236, 0.00181915, 0.01649011, 0.0038914 ,
+       0.00944548, 0.00473042, 0.0201034 , 0.00248185, 0.00927764]), 'param_max_features': masked_array(data=[317, 790, 752, 261, 119, 348, 111, 553, 588, 777],
+             mask=[False, False, False, False, False, False, False, False,
+                   False, False],
+       fill_value='?',
+            dtype=object), 'param_n_estimators': masked_array(data=[599, 749, 110, 179, 893, 396, 792, 821, 111, 756],
+             mask=[False, False, False, False, False, False, False, False,
+                   False, False],
+       fill_value='?',
+            dtype=object), 'params': [{'max_features': 317, 'n_estimators': 599}, {'max_features': 790, 'n_estimators': 749}, {'max_features': 752, 'n_estimators': 110}, {'max_features': 261, 'n_estimators': 179}, {'max_features': 119, 'n_estimators': 893}, {'max_features': 348, 'n_estimators': 396}, {'max_features': 111, 'n_estimators': 792}, {'max_features': 553, 'n_estimators': 821}, {'max_features': 588, 'n_estimators': 111}, {'max_features': 777, 'n_estimators': 756}], 'split0_test_score': array([0.80625, 0.75625, 0.7625 , 0.8    , 0.83125, 0.78125, 0.8125 ,
+       0.75625, 0.73125, 0.75625]), 'split1_test_score': array([0.81875, 0.74375, 0.775  , 0.8    , 0.8    , 0.7875 , 0.8125 ,
+       0.79375, 0.76875, 0.7625 ]), 'split2_test_score': array([0.84375, 0.84375, 0.83125, 0.85625, 0.8375 , 0.825  , 0.85625,
+       0.85625, 0.83125, 0.84375]), 'split3_test_score': array([0.79375, 0.78125, 0.7875 , 0.8125 , 0.83125, 0.76875, 0.83125,
+       0.78125, 0.76875, 0.7625 ]), 'mean_test_score': array([0.815625 , 0.78125  , 0.7890625, 0.8171875, 0.825    , 0.790625 ,
+       0.828125 , 0.796875 , 0.775    , 0.78125  ]), 'std_test_score': array([0.01848775, 0.03852759, 0.02591113, 0.02312289, 0.01465755,
+       0.02096314, 0.01795176, 0.03684321, 0.03590352, 0.03617449]), 'rank_test_score': array([ 4,  8,  7,  3,  2,  6,  1,  5, 10,  8], dtype=int32)}, 'rf': RandomForestClassifier(max_features=111, n_estimators=792), 'confusion_train': array([[320,   0],
+       [  0, 320]]), 'confusion_test': array([[67,  9],
+       [13, 71]]), 'best_parameters': {'max_features': 111, 'n_estimators': 792}, 'accuracy_train': 1.0, 'accuracy_test': 0.8625}
+#+end_example
+
+This is to check if the preprocessing steps matter
+#+begin_src jupyter-python :session py :exports none :results graphics :eval no-export
+importlib.reload(tr)
+import numpy as np
+import scipy.stats as stats
+# grid_search = {'n_estimators':[10,20,50,100], 'max_features':['sqrt', 'log2']}
+
+grid_search = None
+# random_search = {'n_estimators': stats.randint(50, 1000), 'max_features': stats.randint(int(np.sqrt(X_train_corpus.shape[1])), 10 * int(np.sqrt(X_train_corpus.shape[1])))}
+random_search = None
+rf_best = {'accuracy_test':0}
+given = {'max_features': 111, 'n_estimators': 793}
+for iteration in range(0,10):
+    print("iteration start")
+    rf_results = tr.random_forest_experiment(X_train_corpus,
+                                    y_train_corpus,
+                                    X_test_corpus,
+                                    y_test_corpus,
+                                    grid_search=grid_search,
+                                    random_search=random_search,
+                                    given_parameters=given)
+    if rf_results['accuracy_test'] > rf_best['accuracy_test']:
+        rf_best = rf_results
+
+print(rf_best)
+#+end_src
+
+#+RESULTS:
+#+begin_example
+#+end_example
+
+
+Results using the optimized parameters
+#+BEGIN_SRC python
+
+# lower_case=True,
+# pos_tagging=False,
+# del_stopwords=True,
+# del_punkt=True,
+# del_numbers=True,
+# stemming=True,
+# ngrams=1)
+{'rf': RandomForestClassifier(max_features=111, n_estimators=793), 'confusion_train': array([[320,   0],
+       [  0, 320]]), 'confusion_test': array([[67, 10],
+       [13, 70]]), 'best_parameters': {'max_features': 111, 'n_estimators': 793}, 'accuracy_train': 1.0, 'accuracy_test': 0.85625}
+
+# lower_case=True,
+# pos_tagging=True,
+# del_stopwords=True,
+# del_punkt=True,
+# del_numbers=True,
+# stemming=False,
+# ngrams=1)
+{'rf': RandomForestClassifier(max_features=111, n_estimators=793), 'confusion_train': array([[320,   0],
+       [  0, 320]]), 'confusion_test': array([[67,  9],
+       [13, 71]]), 'best_parameters': {'max_features': 111, 'n_estimators': 793}, 'accuracy_train': 1.0, 'accuracy_test': 0.8625}
+
+# lower_case=True,
+# pos_tagging=False,
+# del_stopwords=True,
+# del_punkt=True,
+# del_numbers=True,
+# stemming=False,
+# ngrams=1)
+{'rf': RandomForestClassifier(max_features=111, n_estimators=793), 'confusion_train': array([[320,   0],
+       [  0, 320]]), 'confusion_test': array([[66,  6],
+       [14, 74]]), 'best_parameters': {'max_features': 111, 'n_estimators': 793}, 'accuracy_train': 1.0, 'accuracy_test': 0.875}
+
+# lower_case=True,
+# pos_tagging=False,
+# del_stopwords=False,
+# del_punkt=True,
+# del_numbers=True,
+# stemming=False,
+# ngrams=1)
+{'rf': RandomForestClassifier(max_features=111, n_estimators=793), 'confusion_train': array([[320,   0],
+       [  0, 320]]), 'confusion_test': array([[66,  7],
+       [14, 73]]), 'best_parameters': {'max_features': 111, 'n_estimators': 793}, 'accuracy_train': 1.0, 'accuracy_test': 0.86875}
+
+# lower_case=True,
+# pos_tagging=False,
+# del_stopwords=False,
+# del_punkt=True,
+# del_numbers=False,
+# stemming=False,
+# ngrams=1
+{'rf': RandomForestClassifier(max_features=111, n_estimators=793), 'confusion_train': array([[320,   0],
+       [  0, 320]]), 'confusion_test': array([[66,  7],
+       [14, 73]]), 'best_parameters': {'max_features': 111, 'n_estimators': 793}, 'accuracy_train': 1.0, 'accuracy_test': 0.86875}
+#+END_SRC
+
+**** Bigrams
+#+begin_src jupyter-python :session py :exports results :results graphics :eval no-export
+import preprocessing as prep
+import trees as tr
+import importlib
+importlib.reload(prep)
+
+
+df_corpus, corpus_tm, X_train, y_train, X_test, y_test = prep.preprocessing(prep.read_into_pandas_dataframe(),
+                    lower_case=True,
+                    pos_tagging=False,
+                    del_stopwords=True,
+                    del_punkt=True,
+                    del_numbers=True,
+                    stemming=False,
+                    ngrams=1)
+
+
+print(corpus_tm.shape)
+print(df_corpus.head())
+#+end_src
+
+#+begin_src jupyter-python :session py :exports none :results graphics :eval no-export
+importlib.reload(tr)
+import numpy as np
+import scipy.stats as stats
+# grid_search = {'n_estimators':[10,20,50,100], 'max_features':['sqrt', 'log2']}
+
+grid_search = None
+random_search = {'n_estimators': stats.randint(50, 1000), 'max_features': stats.randint(int(np.sqrt(X_train_corpus.shape[1])), 10 * int(np.sqrt(X_train_corpus.shape[1])))}
+# random_search = None
+rf_best = {'accuracy_test':0}
+given = {}
+for iteration in range(0,10):
+    print("iteration start")
+    rf_results = tr.random_forest_experiment(X_train_corpus,
+                                    y_train_corpus,
+                                    X_test_corpus,
+                                    y_test_corpus,
+                                    grid_search=grid_search,
+                                    random_search=random_search,
+                                    given_parameters=given)
+    if rf_results['accuracy_test'] > rf_best['accuracy_test']:
+        rf_best = rf_results
+
+print(rf_best)
+#+end_src
+
+
+** Model comparisons
+
+* Conclusions
 * References
 bibliography:/Users/mikevink/Documents/bibliography/references.bib
 bibliographystyle:unsrt

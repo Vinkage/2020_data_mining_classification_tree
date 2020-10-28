@@ -1,4 +1,4 @@
-% Created 2020-10-23 Fri 09:15
+% Created 2020-10-27 Tue 14:46
 % Intended LaTeX compiler: pdflatex
 \documentclass[11pt]{article}
 \usepackage[utf8]{inputenc}
@@ -36,45 +36,97 @@
 
 
 \section{Introduction}
-\label{sec:orgaec8a4b}
+\label{sec:org568d161}
 
-\begin{center}
-\begin{tabular}{lllll}
-\toprule
- &  &  & qwoiefjoij & oiwqofij\\
-\midrule
-hello im data &  &  &  & \\
-\bottomrule
-\end{tabular}
-\end{center}
+
 \section{Dataset construction}
-\label{sec:org3b31006}
+\label{sec:org532e23e}
 
 \subsection{Selection of data}
-\label{sec:org4385126}
+\label{sec:org3a9c95a}
 
-The dataset used in this paper is derived from the \href{https://myleott.com/op-spam.html }{publicly available dataset} of
+The dataset used in this paper is derived from the \href{https://myleott.com/op-spam.html}{publicly available dataset} of
 \emph{negative} deceptive opinion spam contributed by \cite{ott2013negative}, containing
 400 gold standard deceptive negative reviews of 20 popular Chicago hotels, and
 400 truthfully negative reviews. This data consists of text files that were used
-to construct our dataset, no cleaning of the data was necessary in this case.  
+to construct our dataset, no cleaning of the data was necessary.
 
-\subsection{Preprocessing of the textual data}
-\label{sec:org0bb6935}
+\subsection{Preprocessing of the review text data}
+\label{sec:org2aea012}
+
+
 
 \subsection{Construction of derived features}
-\label{sec:org4a7f6a4}
+\label{sec:org5f5758e}
 
-\section{}
-\label{sec:orge88a914}
+*
 
 \section{Deception classification results}
-\label{sec:orgbb4f498}
-\section{Conclusion}
-\label{sec:org44818c1}
+\label{sec:orgf6532a7}
+
+\begin{table}[htbp]
+\caption{Classifier performance on the training set (640 reviews Cross. Val.) and the test set (160 reviews Held Out)}
+\centering
+\begin{tabular}{|l|l|l|l|l|l|}
+\hline
+Model & Features & Accuracy & P & R & F \\
+\hline
+Multinomial naive bayes & Unigrams & & & & \\
+\hline
+ & Bigrams & & & & \\
+\hline
+Logistic regression & Unigrams & & & & \\
+\hline
+ & Bigrams & & & & \\
+\hline
+Random forests & Unigrams & & & & \\
+\hline
+ & Bigrams & & & & \\
+\hline
+\end{tabular}
+\end{table}
+
+\subsection{Multinomial naive bayes}
+\label{sec:orgfc8f09b}
+
+\subsection{Logistic regression}
+\label{sec:orgca0423c}
+
+\subsection{Classification trees and random forests}
+\label{sec:orgd2d5172}
+
+\begin{verbatim}
+{'rs_cv': {'mean_fit_time': array([0.3270334 , 0.32086271, 0.33634794, 0.33707774, 0.34927326,
+       0.4065218 , 0.36038804, 0.3671118 , 0.3812362 , 0.37610584]), 'std_fit_time': array([0.00925827, 0.01494473, 0.03082309, 0.02603366, 0.04262613,
+       0.01974343, 0.05183415, 0.01868734, 0.06508651, 0.02701626]), 'mean_score_time': array([0.00299257, 0.00297207, 0.003304  , 0.00304627, 0.0031687 ,
+       0.00322396, 0.00316936, 0.0030092 , 0.00395298, 0.0031541 ]), 'std_score_time': array([1.68716767e-04, 1.01478041e-04, 2.55273994e-04, 2.54581311e-04,
+       1.33357797e-04, 2.85231207e-04, 3.18291633e-04, 9.28722997e-05,
+       9.68385465e-04, 1.89983660e-04]), 'param_ccp_alpha': masked_array(data=[0.0035087283040104557, 0.0031595396293709536,
+                   0.003059188892211335, 0.008156661396612185,
+                   0.0033752376170207024, 0.008655144702494299,
+                   0.005368112045171204, 0.002797735630258966,
+                   0.006744128519064042, 0.00582901885932175],
+             mask=[False, False, False, False, False, False, False, False,
+                   False, False],
+       fill_value='?',
+            dtype=object), 'params': [{'ccp_alpha': 0.0035087283040104557}, {'ccp_alpha': 0.0031595396293709536}, {'ccp_alpha': 0.003059188892211335}, {'ccp_alpha': 0.008156661396612185}, {'ccp_alpha': 0.0033752376170207024}, {'ccp_alpha': 0.008655144702494299}, {'ccp_alpha': 0.005368112045171204}, {'ccp_alpha': 0.002797735630258966}, {'ccp_alpha': 0.006744128519064042}, {'ccp_alpha': 0.00582901885932175}], 'split0_test_score': array([0.6625 , 0.68125, 0.68125, 0.70625, 0.65   , 0.7    , 0.68125,
+       0.68125, 0.68125, 0.6875 ]), 'split1_test_score': array([0.675  , 0.7    , 0.66875, 0.725  , 0.68125, 0.725  , 0.68125,
+       0.66875, 0.7125 , 0.7125 ]), 'split2_test_score': array([0.575  , 0.65   , 0.69375, 0.64375, 0.60625, 0.68125, 0.65   ,
+       0.59375, 0.6875 , 0.61875]), 'split3_test_score': array([0.5625 , 0.5375 , 0.51875, 0.5625 , 0.58125, 0.5625 , 0.51875,
+       0.55625, 0.575  , 0.55   ]), 'mean_test_score': array([0.61875  , 0.6421875, 0.640625 , 0.659375 , 0.6296875, 0.6671875,
+       0.6328125, 0.625    , 0.6640625, 0.6421875]), 'std_test_score': array([0.05038911, 0.06302514, 0.07091754, 0.0635075 , 0.03862252,
+       0.06240227, 0.0670784 , 0.0519164 , 0.05273293, 0.06333428]), 'rank_test_score': array([10,  4,  6,  3,  8,  1,  7,  9,  2,  5], dtype=int32)}, 'tree': DecisionTreeClassifier(ccp_alpha=0.008655144702494299), 'confusion_train': array([[254,  70],
+       [ 66, 250]]), 'confusion_test': array([[46, 21],
+       [34, 59]])}
+\end{verbatim}
+\subsection{Model comparisons}
+\label{sec:org28c38d2}
+
+\section{Conclusions}
+\label{sec:org0d3f879}
 
 \section{References}
-\label{sec:org0381bfb}
+\label{sec:org3436a3d}
 \bibliography{../../../bibliography/references}
 \bibliographystyle{unsrt}
 \end{document}

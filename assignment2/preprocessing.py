@@ -19,12 +19,6 @@ from nltk.stem.porter import PorterStemmer
 # nltk.download('punkt')
 # sentence_tokenizer = nltk.data.load('tokenizers/punkt/english.pickle')
 
-import sklearn
-from sklearn.metrics import accuracy_score
-from sklearn.tree import DecisionTreeClassifier
-from sklearn.ensemble import RandomForestClassifier
-
-
 def read_into_pandas_dataframe(data=None):
     # Give path yourself, or find the data in the folder from github
     #
@@ -72,6 +66,7 @@ def read_into_pandas_dataframe(data=None):
     df_stacked = pd.concat([df_truthful,df_deceptive])
     df_stacked = df_stacked.reindex(sorted(df_stacked.columns), axis=1)
     df_stacked = df_stacked.reset_index(drop=True)
+    # print(df_stacked.head())
     return df_stacked
 
 
@@ -100,6 +95,13 @@ def preprocessing(df,
         for fold in df.columns[:-1]:
             df[fold] = df[fold].apply(lambda review: review.lower())
 
+    # pos betekent part of speech, maakt eigenlijk gewoon extra features om van te leren
+    if pos_tagging:
+        pos_tag_df = pd.DataFrame()
+        for fold in df.columns[:-1]:
+            pos_tag_df[fold+'_pos'] = df[fold].apply(lambda review: nltk.pos_tag(word_tokenize(review)))
+            # print(df.head())
+
     # remove stopwords
     if del_stopwords:
         # print(stopwords.words('english'))
@@ -109,9 +111,9 @@ def preprocessing(df,
 
     # removes punctuation marks from review strings
     if del_punkt:
-        regex = re.compile('\w*[%s]+(\w*\s)' % re.escape(string.punctuation))
+        regex = re.compile('[%s]' % re.escape(string.punctuation))
         for fold in df.columns[:-1]:
-            df[fold] = df[fold].apply(lambda review: regex.sub('', review))
+            df[fold] = df[fold].apply(lambda review: ' '.join([regex.sub('', word) for word in word_tokenize(review)]))
 
     # removes numbers from string
     if del_numbers:
@@ -119,7 +121,7 @@ def preprocessing(df,
             # deletes numbers surrounded by spaces
             df[fold] = df[fold].apply(lambda review: re.sub("\s\d+\s", ' ', review))
             # deletes words containing a number
-            df[fold] = df[fold].apply(lambda review: re.sub("\S*\d+\S*", '', review))
+            # df[fold] = df[fold].apply(lambda review: re.sub("\S*\d+\S*", '', review))
 
     # stems words to reduce features later
     if stemming:
@@ -127,50 +129,42 @@ def preprocessing(df,
         for fold in df.columns[:-1]:
             df[fold] = df[fold].apply(lambda review: ' '.join([stemmer.stem(word) for word in word_tokenize(review)]))
 
-    # pos betekent part of speech, maakt eigenlijk gewoon extra features om van te leren
-    if pos_tagging:
-        for fold in df.columns[:-1]:
-            df[fold+'_pos'] = df[fold].apply(lambda review: nltk.pos_tag(word_tokenize(review)))
-            # print(df.head())
-        df = df.reindex(sorted(df_stacked.columns), axis=1)
 
     # First we construct the corpus document term matrix, and then split it into fold matrices again
-    if pos_tagging:
-        df_corpus = pd.DataFrame.from_dict({'reviews': [], 'pos_tags': [], 'label': []})
-        step = 2
-    else:
-        df_corpus = pd.DataFrame.from_dict({'reviews': [], 'label': []})
-        step = 1
+    df_corpus = pd.DataFrame.from_dict({'reviews': [], 'label': []})
 
 
-    for fold in df.columns[:-1:step]:
+    # Here we construct the corpus term matrix from the folds
+    for fold in df.columns[:-1]:
         if pos_tagging:
-            df_fold = df[[fold, fold+'_pos', 'label']]
+            df_fold = pd.concat([df[[fold]], pos_tag_df[[fold+'_pos']]], axis=1)
+            df_fold = pd.concat([df_fold, df[['label']]], axis=1)
+            # print("the fold df now has the columns:", df_fold.columns)
+            # df_fold = df[[fold, fold+'_pos', 'label']]
             df_fold = df_fold.rename(columns={fold:'reviews', fold+'_pos':'pos_tags'})
         else:
-            print(fold)
+            # print(fold)
             df_fold = df[[fold, 'label']]
             df_fold = df_fold.rename(columns={fold:'reviews'})
         df_corpus = pd.concat([df_corpus, df_fold], ignore_index=True)
 
-    print(df_corpus.shape)
-    print(df_corpus.head())
-
+    # Here we count the frequency of the terms in the processed reviews
     vectorizer = CountVectorizer()
     reviews = df_corpus['reviews']
     review_count_vector = vectorizer.fit_transform(reviews)
     corpus_tm = pd.DataFrame(review_count_vector.toarray().transpose(), index=vectorizer.get_feature_names())
     corpus_tm = corpus_tm.transpose()
-    # print(corpus_tm.shape)
-    # print(corpus_tm.head())
 
+    # Here we add the frequency of the pos tags to the corpus term matrix
     if pos_tagging:
-        pos_tags = df_corpus['pos_tags'].apply(lambda review: ' '.join(['pos_' + tagged_word[1] for tagged_word in review]))
+        pos_tags = df_corpus['pos_tags'].apply(lambda review: ' '.join([tagged_word[1] for tagged_word in review if tagged_word[0] not in string.punctuation]))
         pos_tags_count_vector = vectorizer.fit_transform(pos_tags)
         df_pos_tags = pd.DataFrame(pos_tags_count_vector.toarray().transpose(), index=vectorizer.get_feature_names())
         df_pos_tags = df_pos_tags.transpose()
+        # df_pos_tags = df_pos_tags.drop(['pos_'], axis=1)
         corpus_tm = pd.concat([corpus_tm, df_pos_tags], axis=1)
 
+    # Here we handle ngrams
     if ngrams > 1:
         ngram_reviews = df_corpus['reviews']
         for ngram_size in range(2, ngrams + 1):
@@ -179,51 +173,35 @@ def preprocessing(df,
             df_ngram_reviews = pd.DataFrame(ngram_reviews_count_vector.toarray().transpose(), index=vectorizer.get_feature_names())
             df_ngram_reviews = df_ngram_reviews.transpose()
             corpus_tm = pd.concat([corpus_tm, df_ngram_reviews], axis=1)
-            # print(df_ngram_reviews.shape)
-            # print(df_ngram_reviews.head())
-            # for ngram in df_ngram_reviews.iloc[0][df_ngram_reviews.iloc[0] > 0].index:
-            #     print(ngram)
 
-
+    # If you choose ngrams=0, then only the pos tags are in the term matrix
+    elif ngrams == 0:
+        pos_tags = df_corpus['pos_tags'].apply(lambda review: ' '.join([tagged_word[1] for tagged_word in review if tagged_word[0] not in string.punctuation]))
+        pos_tags_count_vector = vectorizer.fit_transform(pos_tags)
+        df_pos_tags = pd.DataFrame(pos_tags_count_vector.toarray().transpose(), index=vectorizer.get_feature_names())
+        df_pos_tags = df_pos_tags.transpose()
+        corpus_tm = df_pos_tags
+        print(corpus_tm.columns)
 
 
     # First 4 * 160 documents are training data
-    X_train_corpus = corpus_tm[:640].to_numpy()
-    y_train_corpus = np.array(df_corpus['label'][:640])
+    X_train = corpus_tm[:640].to_numpy()
+    y_train = np.array(df_corpus['label'][:640])
 
-    X_test_corpus = corpus_tm[640:].to_numpy()
-    y_test_corpus = np.array(df_corpus['label'][640:])
+    X_test = corpus_tm[640:].to_numpy()
+    y_test = np.array(df_corpus['label'][640:])
 
-    # List of term matrices of first 4 folds, and their labels
-    X_dev_folds = []
-    y_dev_folds = []
-    for i in range(0, len(corpus_tm) - 160, 160):
+    return df_corpus, corpus_tm, X_train, y_train, X_test, y_test
 
-        X_dev_fold = corpus_tm[i:i+160]
-        X_dev_folds.append(X_dev_fold.to_numpy())
+if __name__=='__main__':
+    df_stacked = read_into_pandas_dataframe()
 
-        y_dev_fold = df_corpus['label'][i:i+160]
-        y_dev_folds.append(y_dev_fold)
-
-    return df_corpus, corpus_tm, X_train_corpus, y_train_corpus, X_test_corpus, y_test_corpus, X_dev_folds, y_dev_folds
-
-df_stacked = read_into_pandas_dataframe()
-
-df_corpus, corpus_tm, X_train_corpus, y_train_corpus, X_test_corpus, y_test_corpus, X_dev_folds, y_dev_folds = preprocessing(df_stacked,
-                del_punkt=True,
-                lower_case=True,
-                del_numbers=True,
-                del_stopwords=True,
-                stemming=False,
-                pos_tagging=False,
-                ngrams=1)
-
-
-def modelling_experiment(X_train, y_train, X_test, y_test):
-    print(X_train.shape)
-    tree = DecisionTreeClassifier(random_state=0)
-    tree.fit(X_train, y_train)
-    y_pred = tree.predict(X_test)
-    print(accuracy_score(y_test, y_pred))
-
-modelling_experiment(X_train_corpus, y_train_corpus, X_test_corpus, y_test_corpus)
+    df_corpus, corpus_tm, X_train, y_train, X_test, y_test = preprocessing(df_stacked,
+                    lower_case=True,
+                    pos_tagging=False,
+                    del_stopwords=True,
+                    del_punkt=True,
+                    del_numbers=True,
+                    stemming=False,
+                                                                           ngrams=2)
+    print(corpus_tm.shape)
