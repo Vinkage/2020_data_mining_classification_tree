@@ -7,6 +7,9 @@ import matplotlib.pyplot as plt
 
 from sklearn.metrics import accuracy_score
 from sklearn.metrics import confusion_matrix
+from sklearn.metrics import precision_score
+from sklearn.metrics import recall_score
+from sklearn.metrics import f1_score
 import sklearn.tree
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier
@@ -22,8 +25,8 @@ from scipy.stats import uniform
 
 
 
-def single_tree_modelling_experiment(X_train, y_train, X_test, y_test, grid_search=None, random_search=None):
-    best_parameters = {'ccp_alpha': 0.005}
+def single_tree_modelling_experiment(corpus_tm, X_train, y_train, X_test, y_test, grid_search=None, random_search=None, given_parameters=None):
+    best_parameters = given_parameters
     tree = DecisionTreeClassifier()
     cv = KFold(n_splits=4)
     results = {}
@@ -49,12 +52,18 @@ def single_tree_modelling_experiment(X_train, y_train, X_test, y_test, grid_sear
 
     results['confusion_train'] = confusion_matrix(y_hat_train, y_train)
     results['confusion_test'] = confusion_matrix(y_hat_test, y_test)
-    # print(best_parameters)
-    # print("Test confusion:")
-    # print(confusion_matrix(y_hat_test, y_test))
-    # print("Train confusion:")
-    # print(confusion_matrix(y_hat_train, y_train))
+    results['best_parameters'] = best_parameters
+    results['accuracy_test'] = accuracy_score(y_hat_test, y_test)
+    results['precision_test'] = precision_score(y_hat_test, y_test)
+    results['recall_test'] = recall_score(y_hat_test, y_test)
+    results['f1_test'] = f1_score(y_hat_test, y_test)
+    results['predictions'] = y_hat_test
+
+    features = sorted( [(x, i) for (i,x) in enumerate(best_tree.feature_importances_)], reverse=True )[:5]
+    results['features'] = corpus_tm.columns[[x[1] for x in features]]
+
     return results
+
 
 def single_tree_alpha_path(X_train, y_train, X_test, y_test):
     clf = DecisionTreeClassifier(random_state=0)
@@ -67,7 +76,7 @@ def single_tree_alpha_path(X_train, y_train, X_test, y_test):
     ax.set_title("Total Impurity vs effective alpha for training set")
     plt.show()
 
-def random_forest_experiment(X_train, y_train, X_test, y_test, grid_search=None, random_search=None, given_parameters=None):
+def random_forest_experiment(corpus_tm, X_train, y_train, X_test, y_test, grid_search=None, random_search=None, given_parameters=None):
     best_parameters = given_parameters
     rf = RandomForestClassifier()
     cv = KFold(n_splits=4)
@@ -95,8 +104,14 @@ def random_forest_experiment(X_train, y_train, X_test, y_test, grid_search=None,
     results['confusion_train'] = confusion_matrix(y_hat_train, y_train)
     results['confusion_test'] = confusion_matrix(y_hat_test, y_test)
     results['best_parameters'] = best_parameters
-    results['accuracy_train'] = accuracy_score(y_hat_train, y_train)
     results['accuracy_test'] = accuracy_score(y_hat_test, y_test)
+    results['precision_test'] = precision_score(y_hat_test, y_test)
+    results['recall_test'] = recall_score(y_hat_test, y_test)
+    results['f1_test'] = f1_score(y_hat_test, y_test)
+    results['predictions'] = y_hat_test
+
+    features = sorted( [(x, i) for (i,x) in enumerate(best_rf.feature_importances_)], reverse=True )[:5]
+    results['features'] = corpus_tm.columns[[x[1] for x in features]]
     return results
 
 # df_read = preprocessing.read_into_pandas_dataframe()
@@ -113,6 +128,13 @@ def random_forest_experiment(X_train, y_train, X_test, y_test, grid_search=None,
 # grid_search = {'ccp_alpha': [0.006]}
 # random_search = None
 #
+
+def drop_sparse_terms(df):
+    for col in df.columns:
+        if sum(df[col] > 0) < 0.05 * df.shape[0]:
+            df = df.drop(col, axis=1)
+    return df
+
 
 if __name__ == '__main__':
     grid_search = None
