@@ -1,10 +1,10 @@
 import numpy as np
 from sklearn import metrics
-#- Names and student no.:
+#- Made by:
 
-# Hunter Sterk 6981046
-# Lonnie Bregman 6980562
-# Mike Vink 5585791
+# Hunter Sterk
+# Lonnie Bregman
+# Mike Vink
 
 #- Main functions:
 
@@ -173,7 +173,7 @@ from sklearn import metrics
 #     the classes vector. Note that when the number of 1 and 0 elements are
 #     equal, it returns 0.
 
-#     EXAMPLE:  
+#     EXAMPLE:
 #     >>> y
 #     array([0., 0., 0., 0., 0., 1., 1., 1., 1., 1.])
 #     >>> major_vote(y)
@@ -221,7 +221,7 @@ from sklearn import metrics
 #    (1.4285714285714286, array([False, False, False, False, False, False,  True,  True,  True,
 #           False]), array([ True,  True,  True,  True,  True,  True, False, False, False,
 #            True]), 36.0)
-#  
+#
 
 #     """
 
@@ -427,7 +427,7 @@ def tree_grow_b(x=None,
 def tree_pred_b(x=None, tr=None, true=None) -> np.array:
     """
     The repeated application of tree.predict to construct a 2D array which is
-    used to make a majority vote label prediction for the rows in x. 
+    used to make a majority vote label prediction for the rows in x.
     """
     y_bag = np.zeros((len(x), len(tr)))
     for i, tree in enumerate(tr):
