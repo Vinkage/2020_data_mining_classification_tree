@@ -1,7 +1,5 @@
 # 2020 project for the data mining course
 * [link to assignment](http://www.cs.uu.nl/docs/vakken/mdm/assignment1-2020.pdf)
-* [link to article datasets part 2](https://www.st.cs.uni-saarland.de/softevo/bug-data/eclipse/promise2007-dataset-20a.pdf)
-
 
 This project is a from scratch implementation of a classification tree using
 the theory we learned in the course. We were awarded a 10/10 for the coding
